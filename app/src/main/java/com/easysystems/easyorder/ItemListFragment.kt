@@ -8,6 +8,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.easysystems.easyorder.adapters.ItemAdapter
+import com.easysystems.easyorder.data.Item
 import com.easysystems.easyorder.databinding.FragmentItemListBinding
 import java.util.ArrayList
 
@@ -29,9 +31,9 @@ class ItemListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val itemListView: RecyclerView = binding.recyclerView
-        val itemList = if (Build.VERSION.SDK_INT >= 33) {
-            arguments?.getParcelableArrayList("itemList", Item::class.java)!!
-        } else {
+        val itemList: ArrayList<Item> = if (Build.VERSION.SDK_INT >= 33) ({
+            arguments?.getSerializable("itemList")!!
+        }) as ArrayList<Item> else {
             arguments?.get("itemList") as ArrayList<Item>
         }
 

@@ -1,10 +1,13 @@
-package com.easysystems.easyorder
+package com.easysystems.easyorder.adapters
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.easysystems.easyorder.R
+import com.easysystems.easyorder.data.Item
 
 class ItemAdapter(var itemList: ArrayList<Item>) :
     RecyclerView.Adapter<ItemAdapter.ItemListViewHolder>() {
@@ -13,12 +16,13 @@ class ItemAdapter(var itemList: ArrayList<Item>) :
 
         var name: TextView = view.findViewById(R.id.cardViewName)
         var price: TextView = view.findViewById(R.id.cardViewPrice)
+        var btnAdd: Button = view.findViewById(R.id.btnAdd)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemListViewHolder {
 
         val view: View = LayoutInflater.from(parent.context)
-            .inflate(R.layout.card_design, parent, false) // Inflate what, where and how
+            .inflate(R.layout.card_design, parent, false)
 
         return ItemListViewHolder(view)
     }
@@ -27,6 +31,11 @@ class ItemAdapter(var itemList: ArrayList<Item>) :
 
         holder.name.text = itemList[position].name.toString()
         holder.price.text = itemList[position].price.toString()
+
+        holder.btnAdd.setOnClickListener {
+
+            println("Add item and show total")
+        }
     }
 
     override fun getItemCount(): Int {

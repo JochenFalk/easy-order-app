@@ -1,5 +1,6 @@
-package com.easysystems.easyorder
+package com.easysystems.easyorder.data
 
+import android.os.Parcelable
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.io.Serializable
 

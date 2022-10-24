@@ -29,8 +29,11 @@ class ItemAdapter(var itemList: ArrayList<Item>) :
 
     override fun onBindViewHolder(holder: ItemListViewHolder, position: Int) {
 
-        holder.name.text = itemList[position].name.toString()
-        holder.price.text = itemList[position].price.toString()
+        val name = itemList[position].name.toString()
+        val price = "€ " + itemList[position].price.toString()
+
+        holder.name.text = name
+        holder.price.text = price
 
         holder.btnAdd.setOnClickListener {
 

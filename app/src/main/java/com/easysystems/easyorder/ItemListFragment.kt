@@ -31,11 +31,11 @@ class ItemListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val itemListView: RecyclerView = binding.recyclerView
-        val itemList: ArrayList<Item> = if (Build.VERSION.SDK_INT >= 33) ({
+        val itemList = (if (Build.VERSION.SDK_INT >= 33) {
             arguments?.getSerializable("itemList")!!
-        }) as ArrayList<Item> else {
-            arguments?.get("itemList") as ArrayList<Item>
-        }
+        } else {
+            arguments?.get("itemList")
+        }) as ArrayList<Item>
 
         val itemAdapter: ItemAdapter? = activity?.let {
             itemListView.layoutManager = LinearLayoutManager(it)

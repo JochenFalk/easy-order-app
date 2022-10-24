@@ -30,14 +30,11 @@ class ItemCollection {
                     try {
 
                         val itemList = response.body() as ArrayList<Item>
-                        binding.progressBar.isVisible = false
                         callback(itemList)
 
                         println("Retrieved items successfully. List size: ${itemList.size}")
 
                     } catch (ex: Exception) {
-
-                        binding.progressBar.isVisible = false
 
                         Toast.makeText(
                             context,
@@ -48,8 +45,6 @@ class ItemCollection {
                         println("Returned list is empty: $ex")
                     }
                 } else {
-
-                    binding.progressBar.isVisible = false
 
                     Toast.makeText(
                         context,
@@ -62,8 +57,6 @@ class ItemCollection {
             }
 
             override fun onFailure(call: Call<List<Item>>, t: Throwable) {
-
-                binding.progressBar.isVisible = false
 
                 Toast.makeText(
                     context,
@@ -89,14 +82,11 @@ class ItemCollection {
                     try {
 
                         item = response.body() as Item
-                        binding.progressBar.isVisible = false
                         callback(item)
 
                         println("Retrieved item successfully")
 
                     } catch (ex: Exception) {
-
-                        binding.progressBar.isVisible = false
 
                         Toast.makeText(
                             context,
@@ -107,8 +97,6 @@ class ItemCollection {
                         println("Item not found: $ex")
                     }
                 } else {
-
-                    binding.progressBar.isVisible = false
 
                     Toast.makeText(
                         context,
@@ -121,8 +109,6 @@ class ItemCollection {
             }
 
             override fun onFailure(call: Call<Item>, t: Throwable) {
-
-                binding.progressBar.isVisible = false
 
                 Toast.makeText(
                     context,

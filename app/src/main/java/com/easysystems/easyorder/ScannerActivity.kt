@@ -3,25 +3,23 @@ package com.easysystems.easyorder
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.PersistableBundle
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.easysystems.easyorder.MainActivity.Companion.RESULT
-import com.easysystems.easyorder.databinding.ActivityMainBinding
-import com.easysystems.easyorder.databinding.ActivityScannerBinding
 import com.google.zxing.Result
 import me.dm7.barcodescanner.zxing.ZXingScannerView
 
 class ScannerActivity : AppCompatActivity(), ZXingScannerView.ResultHandler {
 
-    var scannerView: ZXingScannerView? = null
+    private var scannerView: ZXingScannerView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        println("Scanning activity started")
+        Log.i("Info","Scanning activity started")
 
         scannerView = ZXingScannerView(this)
         setContentView(scannerView)

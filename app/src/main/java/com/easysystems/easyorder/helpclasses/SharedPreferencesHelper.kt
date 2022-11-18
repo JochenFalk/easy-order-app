@@ -3,6 +3,7 @@ package com.easysystems.easyorder.helpclasses
 import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import java.lang.Long.getLong
 
 object SharedPreferencesHelper {
@@ -34,7 +35,7 @@ object SharedPreferencesHelper {
 
         editor.apply()
 
-        println("Preference $key is saved with set name: $setName")
+        Log.i("Info","Preference $key is saved with set name: $setName")
     }
 
     fun retrievePreferences(
@@ -64,7 +65,7 @@ object SharedPreferencesHelper {
                 }
             }
             else -> {
-                println("Incompatible type specified")
+                Log.i("Info","Incompatible type specified")
             }
         }
 

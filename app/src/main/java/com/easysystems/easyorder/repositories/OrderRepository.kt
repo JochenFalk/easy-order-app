@@ -1,11 +1,10 @@
 package com.easysystems.easyorder.repositories
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
-import com.easysystems.easyorder.data.Item
 import com.easysystems.easyorder.data.Order
 import com.easysystems.easyorder.helpclasses.Settings
-import com.easysystems.easyorder.data.Session
 import com.easysystems.easyorder.databinding.ActivityMainBinding
 import com.easysystems.easyorder.retrofit.RetrofitOrder
 import retrofit2.Call
@@ -34,7 +33,7 @@ class OrderRepository {
                         order = response.body() as Order
                         callback(order)
 
-                        println("Retrieved order successfully: $order")
+                        Log.i("Info","Retrieved order successfully: $order")
 
                     } catch (ex: Exception) {
 
@@ -44,10 +43,10 @@ class OrderRepository {
                             Toast.LENGTH_LONG
                         ).show()
 
-                        println("Order not found: $ex")
+                        Log.i("Info","Order not found: $ex")
                     }
                 } else {
-                    println("Failed to get order for id: $id")
+                    Log.i("Info","Failed to get order for id: $id")
                 }
             }
 
@@ -59,7 +58,7 @@ class OrderRepository {
                     Toast.LENGTH_LONG
                 ).show()
 
-                println("Request failed with error: ${t.localizedMessage}")
+                Log.i("Info","Request failed with error: ${t.localizedMessage}")
             }
         })
     }
@@ -81,14 +80,14 @@ class OrderRepository {
                         order = response.body() as Order
                         callback(order)
 
-                        println("Order created successfully: $order")
+                        Log.i("Info","Order created successfully: $order")
 
                     } catch (ex: Exception) {
 
-                        println("Failed to create order: $ex")
+                        Log.i("Info","Failed to create order: $ex")
                     }
                 } else {
-                    println("Failed to create order with session id: $sessionId")
+                    Log.i("Info","Failed to create order with session id: $sessionId")
                 }
             }
 
@@ -100,7 +99,7 @@ class OrderRepository {
                     Toast.LENGTH_LONG
                 ).show()
 
-                println("Request failed with error: ${t.localizedMessage}")
+                Log.i("Info","Request failed with error: ${t.localizedMessage}")
             }
         })
     }

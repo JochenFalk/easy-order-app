@@ -1,6 +1,7 @@
 package com.easysystems.easyorder.repositories
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import com.easysystems.easyorder.helpclasses.Settings
 import com.easysystems.easyorder.data.Session
@@ -32,7 +33,7 @@ class SessionRepository {
                         session = response.body() as Session
                         callback(session)
 
-                        println("Retrieved session successfully: $session")
+                        Log.i("Info","Retrieved session successfully: $session")
 
                     } catch (ex: Exception) {
 
@@ -42,10 +43,10 @@ class SessionRepository {
                             Toast.LENGTH_LONG
                         ).show()
 
-                        println("Session not found: $ex")
+                        Log.i("Info","Session not found: $ex")
                     }
                 } else {
-                    println("Failed to get session for id: $id")
+                    Log.i("Info","Failed to get session for id: $id")
                 }
             }
 
@@ -57,7 +58,7 @@ class SessionRepository {
                     Toast.LENGTH_LONG
                 ).show()
 
-                println("Request failed with error: ${t.localizedMessage}")
+                Log.i("Info","Request failed with error: ${t.localizedMessage}")
             }
         })
     }
@@ -77,7 +78,7 @@ class SessionRepository {
                         session = response.body() as Session
                         callback(session)
 
-                        println("Retrieved session successfully: $session")
+                        Log.i("Info","Retrieved session successfully: $session")
 
                     } catch (ex: Exception) {
 
@@ -87,10 +88,10 @@ class SessionRepository {
                             Toast.LENGTH_LONG
                         ).show()
 
-                        println("Session not found: $ex")
+                        Log.i("Info","Session not found: $ex")
                     }
                 } else {
-                    println("Failed to verify session for table id: $tabletopId")
+                    Log.i("Info","Failed to verify session for table id: $tabletopId")
                 }
             }
 
@@ -102,7 +103,7 @@ class SessionRepository {
                     Toast.LENGTH_LONG
                 ).show()
 
-                println("Request failed with error: ${t.localizedMessage}")
+                Log.i("Info","Request failed with error: ${t.localizedMessage}")
             }
         })
     }

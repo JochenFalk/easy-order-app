@@ -1,5 +1,6 @@
 package com.easysystems.easyorder.adapters
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -37,7 +38,7 @@ class ItemAdapter(var itemList: ArrayList<Item>) :
 
         holder.btnAdd.setOnClickListener {
 
-            println("Add item and update total")
+            Log.i("Info","Add item and update total")
         }
     }
 

@@ -1,6 +1,7 @@
 package com.easysystems.easyorder.repositories
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import com.easysystems.easyorder.helpclasses.Settings
 import com.easysystems.easyorder.data.Item
@@ -32,7 +33,7 @@ class ItemRepository {
                         val itemList = response.body() as ArrayList<Item>
                         callback(itemList)
 
-                        println("Retrieved items successfully. List size: ${itemList.size}")
+                        Log.i("Info","Retrieved items successfully. List size: ${itemList.size}")
 
                     } catch (ex: Exception) {
 
@@ -42,7 +43,7 @@ class ItemRepository {
                             Toast.LENGTH_LONG
                         ).show()
 
-                        println("Returned list is empty: $ex")
+                        Log.i("Info","Returned list is empty: $ex")
                     }
                 } else {
 
@@ -52,7 +53,7 @@ class ItemRepository {
                         Toast.LENGTH_LONG
                     ).show()
 
-                    println("Failed to retrieve list!")
+                    Log.i("Info","Failed to retrieve list!")
                 }
             }
 
@@ -64,7 +65,7 @@ class ItemRepository {
                     Toast.LENGTH_LONG
                 ).show()
 
-                println("Request failed with error: ${t.localizedMessage}")
+                Log.i("Info","Request failed with error: ${t.localizedMessage}")
             }
         })
     }

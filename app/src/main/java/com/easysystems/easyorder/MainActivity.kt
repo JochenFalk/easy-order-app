@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
@@ -16,7 +17,6 @@ import com.easysystems.easyorder.databinding.ActivityMainBinding
 import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
 import com.easysystems.easyorder.repositories.OrderRepository
 import java.io.Serializable
-import java.lang.Exception
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.btnCheckout.setOnClickListener {
-            println("Show orders")
+            Log.i("Info","Show orders")
         }
 
         session = Session()
@@ -63,12 +63,13 @@ class MainActivity : AppCompatActivity() {
 
             "OPENED" -> {
                 loadMenuItems()
+                Log.i("Info","Session status is opened")
             }
             "CLOSED" -> {
-                println("Session status is closed")
+                Log.i("Info","Session status is closed")
             }
             "LOCKED" -> {
-                println("Session status is locked")
+                Log.i("Info","Session status is locked")
             }
             else -> {
                 startScanningActivity()

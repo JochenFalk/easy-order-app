@@ -54,4 +54,7 @@ dependencies {
 
     // QR scanner
     implementation 'me.dm7.barcodescanner:zxing:1.9.8'
+
+    // logging
+    implementation("io.github.microutils:kotlin-logging-jvm:3.0.0")
 }

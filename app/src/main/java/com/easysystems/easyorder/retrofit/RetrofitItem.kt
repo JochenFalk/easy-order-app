@@ -8,8 +8,8 @@ import retrofit2.http.Path
 interface RetrofitItem {
 
     @GET("items")
-    fun getAllItems() : Call<List<Item>>
+    fun retrieveAllItems() : Call<List<Item>>
     @GET("items/{id}")
-    fun getItemById(@Path("id") id: Int) : Call<Item>
+    fun retrieveItemById(@Path("id") id: Int) : Call<Item>
 
 }

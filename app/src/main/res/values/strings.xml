@@ -2,6 +2,6 @@
     <string name="app_name">EasyOrder</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="btnCheckout">Go to shopping cart (€ 0,0)</string>
+    <string name="btnCheckout">View and send your order (€ 0,0)</string>
     <string name="btnScan">Scan the code to join the table</string>
 </resources>

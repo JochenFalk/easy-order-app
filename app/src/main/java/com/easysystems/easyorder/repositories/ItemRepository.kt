@@ -1,8 +1,8 @@
-package com.easysystems.easyorder.collections
+package com.easysystems.easyorder.repositories
 
 import android.content.Context
 import android.widget.Toast
-import androidx.core.view.isVisible
+import com.easysystems.easyorder.helpclasses.Settings
 import com.easysystems.easyorder.data.Item
 import com.easysystems.easyorder.databinding.ActivityMainBinding
 import com.easysystems.easyorder.retrofit.RetrofitItem
@@ -13,14 +13,14 @@ import retrofit2.Retrofit
 import retrofit2.converter.jackson.JacksonConverterFactory
 import java.lang.Exception
 
-class ItemCollection {
+class ItemRepository {
 
     lateinit var item: Item
 
     fun getAllItems(context: Context, binding: ActivityMainBinding, callback:(ArrayList<Item>?)->Unit) {
 
         val retrofitItem = generateRetrofitItem()
-        val call: Call<List<Item>> = retrofitItem.getAllItems()
+        val call: Call<List<Item>> = retrofitItem.retrieveAllItems()
 
         call.enqueue(object : Callback<List<Item>> {
             override fun onResponse(call: Call<List<Item>>, response: Response<List<Item>>) {
@@ -69,66 +69,10 @@ class ItemCollection {
         })
     }
 
-    fun getItemById(id: Int, context: Context, binding: ActivityMainBinding, callback:(Item?)->Unit) {
-
-        val retrofitItem = generateRetrofitItem()
-        val call: Call<Item> = retrofitItem.getItemById(id)
-
-        call.enqueue(object : Callback<Item> {
-            override fun onResponse(call: Call<Item>, response: Response<Item>) {
-
-                if (response.isSuccessful) {
-
-                    try {
-
-                        item = response.body() as Item
-                        callback(item)
-
-                        println("Retrieved item successfully")
-
-                    } catch (ex: Exception) {
-
-                        Toast.makeText(
-                            context,
-                            "Item not found",
-                            Toast.LENGTH_LONG
-                        ).show()
-
-                        println("Item not found: $ex")
-                    }
-                } else {
-
-                    Toast.makeText(
-                        context,
-                        "Failed to get item!",
-                        Toast.LENGTH_LONG
-                    ).show()
-
-                    println("Failed to get item!")
-                }
-            }
-
-            override fun onFailure(call: Call<Item>, t: Throwable) {
-
-                Toast.makeText(
-                    context,
-                    "Failed to get item!",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                println("Request failed with error: ${t.localizedMessage}")
-            }
-        })
-    }
-
     private fun generateRetrofitItem(): RetrofitItem {
 
-        val ipAddress = "192.168.178.136"
-//        val ipAddress = "localhost"
-        val baseURL = "http://$ipAddress:8080/v1/"
-
         val retrofit = Retrofit.Builder()
-            .baseUrl(baseURL)
+            .baseUrl(Settings.baseURL)
             .addConverterFactory(JacksonConverterFactory.create())
             .build()
 

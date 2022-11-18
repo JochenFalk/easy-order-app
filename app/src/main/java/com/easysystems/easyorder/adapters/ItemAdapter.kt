@@ -37,7 +37,7 @@ class ItemAdapter(var itemList: ArrayList<Item>) :
 
         holder.btnAdd.setOnClickListener {
 
-            println("Add item and show total")
+            println("Add item and update total")
         }
     }
 

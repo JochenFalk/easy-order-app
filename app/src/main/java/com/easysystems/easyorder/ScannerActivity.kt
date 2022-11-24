@@ -79,4 +79,9 @@ class ScannerActivity : AppCompatActivity(), ZXingScannerView.ResultHandler {
         intent.putExtra(RESULT, result.toString())
         startActivity(intent)
     }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        finish()
+    }
 }

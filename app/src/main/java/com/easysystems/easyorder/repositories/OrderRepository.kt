@@ -3,7 +3,7 @@ package com.easysystems.easyorder.repositories
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import com.easysystems.easyorder.data.Order
+import com.easysystems.easyorder.data.OrderDTO
 import com.easysystems.easyorder.helpclasses.Settings
 import com.easysystems.easyorder.databinding.ActivityMainBinding
 import com.easysystems.easyorder.retrofit.RetrofitOrder
@@ -16,32 +16,26 @@ import java.lang.Exception
 
 class OrderRepository {
 
-    lateinit var order: Order
+    lateinit var orderDTO: OrderDTO
 
-    fun retrieveOrderById(id: Int, context: Context, binding: ActivityMainBinding, callback:(Order?)->Unit) {
+    fun retrieveOrderById(id: Int, context: Context, binding: ActivityMainBinding, callback:(OrderDTO?)->Unit) {
 
         val retrofitOrder = generateRetrofitOrder()
-        val call: Call<Order> = retrofitOrder.retrieveOrderById(id)
+        val call: Call<OrderDTO> = retrofitOrder.retrieveOrderById(id)
 
-        call.enqueue(object : Callback<Order> {
-            override fun onResponse(call: Call<Order>, response: Response<Order>) {
+        call.enqueue(object : Callback<OrderDTO> {
+            override fun onResponse(call: Call<OrderDTO>, response: Response<OrderDTO>) {
 
                 if (response.isSuccessful) {
 
                     try {
 
-                        order = response.body() as Order
-                        callback(order)
+                        orderDTO = response.body() as OrderDTO
+                        callback(orderDTO)
 
-                        Log.i("Info","Retrieved order successfully: $order")
+                        Log.i("Info","Retrieved order successfully: $orderDTO")
 
                     } catch (ex: Exception) {
-
-                        Toast.makeText(
-                            context,
-                            "Order not found",
-                            Toast.LENGTH_LONG
-                        ).show()
 
                         Log.i("Info","Order not found: $ex")
                     }
@@ -50,7 +44,7 @@ class OrderRepository {
                 }
             }
 
-            override fun onFailure(call: Call<Order>, t: Throwable) {
+            override fun onFailure(call: Call<OrderDTO>, t: Throwable) {
 
                 Toast.makeText(
                     context,
@@ -63,24 +57,24 @@ class OrderRepository {
         })
     }
 
-    fun createOrder(sessionId: Int, context: Context, binding: ActivityMainBinding, callback:(Order?)->Unit) {
+    fun createOrder(sessionId: Int, context: Context, binding: ActivityMainBinding, callback:(OrderDTO?)->Unit) {
 
-        order = Order(status = "OPENED", items = ArrayList(), sessionId = sessionId, total = 0.0)
+        orderDTO = OrderDTO(status = OrderDTO.Status.OPENED, items = ArrayList(), sessionId = sessionId, total = 0.0)
 
         val retrofitOrder = generateRetrofitOrder()
-        val call: Call<Order> = retrofitOrder.createOrder(order)
+        val call: Call<OrderDTO> = retrofitOrder.createOrder(orderDTO)
 
-        call.enqueue(object : Callback<Order> {
-            override fun onResponse(call: Call<Order>, response: Response<Order>) {
+        call.enqueue(object : Callback<OrderDTO> {
+            override fun onResponse(call: Call<OrderDTO>, response: Response<OrderDTO>) {
 
                 if (response.isSuccessful) {
 
                     try {
 
-                        order = response.body() as Order
-                        callback(order)
+                        orderDTO = response.body() as OrderDTO
+                        callback(orderDTO)
 
-                        Log.i("Info","Order created successfully: $order")
+                        Log.i("Info","Order created successfully: $orderDTO")
 
                     } catch (ex: Exception) {
 
@@ -91,7 +85,7 @@ class OrderRepository {
                 }
             }
 
-            override fun onFailure(call: Call<Order>, t: Throwable) {
+            override fun onFailure(call: Call<OrderDTO>, t: Throwable) {
 
                 Toast.makeText(
                     context,

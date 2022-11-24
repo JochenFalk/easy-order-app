@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import com.easysystems.easyorder.helpclasses.Settings
-import com.easysystems.easyorder.data.Item
+import com.easysystems.easyorder.data.ItemDTO
 import com.easysystems.easyorder.databinding.ActivityMainBinding
 import com.easysystems.easyorder.retrofit.RetrofitItem
 import retrofit2.Call
@@ -16,32 +16,26 @@ import java.lang.Exception
 
 class ItemRepository {
 
-    lateinit var item: Item
+    lateinit var itemDTO: ItemDTO
 
-    fun getAllItems(context: Context, binding: ActivityMainBinding, callback:(ArrayList<Item>?)->Unit) {
+    fun getAllItems(context: Context, binding: ActivityMainBinding, callback:(ArrayList<ItemDTO>?)->Unit) {
 
         val retrofitItem = generateRetrofitItem()
-        val call: Call<List<Item>> = retrofitItem.retrieveAllItems()
+        val call: Call<List<ItemDTO>> = retrofitItem.retrieveAllItems()
 
-        call.enqueue(object : Callback<List<Item>> {
-            override fun onResponse(call: Call<List<Item>>, response: Response<List<Item>>) {
+        call.enqueue(object : Callback<List<ItemDTO>> {
+            override fun onResponse(call: Call<List<ItemDTO>>, response: Response<List<ItemDTO>>) {
 
                 if (response.isSuccessful) {
 
                     try {
 
-                        val itemList = response.body() as ArrayList<Item>
-                        callback(itemList)
+                        val itemDTOList = response.body() as ArrayList<ItemDTO>
+                        callback(itemDTOList)
 
-                        Log.i("Info","Retrieved items successfully. List size: ${itemList.size}")
+                        Log.i("Info","Retrieved items successfully. List size: ${itemDTOList.size}")
 
                     } catch (ex: Exception) {
-
-                        Toast.makeText(
-                            context,
-                            "Found list is empty!",
-                            Toast.LENGTH_LONG
-                        ).show()
 
                         Log.i("Info","Returned list is empty: $ex")
                     }
@@ -57,7 +51,7 @@ class ItemRepository {
                 }
             }
 
-            override fun onFailure(call: Call<List<Item>>, t: Throwable) {
+            override fun onFailure(call: Call<List<ItemDTO>>, t: Throwable) {
 
                 Toast.makeText(
                     context,

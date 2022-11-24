@@ -3,13 +3,20 @@ package com.easysystems.easyorder.data
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.io.Serializable
 
-data class Item(
+data class ItemDTO(
     @JsonProperty("id")
-    val itemId: Int? = null,
+    val id: Int? = null,
     @JsonProperty("name")
     val name: String? = null,
     @JsonProperty("category")
-    val itemCategory: String? = null,
+    val category: Category? = null,
     @JsonProperty("price")
-    val price: Float? = null
-) : Serializable
+    val price: Double? = null
+) : Serializable {
+    enum class Category {
+        APPETIZER,
+        MAIN,
+        DESERT,
+        DRINKS
+    }
+}

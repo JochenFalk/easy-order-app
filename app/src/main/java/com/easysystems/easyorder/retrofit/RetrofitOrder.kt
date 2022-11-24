@@ -1,7 +1,6 @@
 package com.easysystems.easyorder.retrofit
 
-import com.easysystems.easyorder.data.Order
-import com.easysystems.easyorder.data.Session
+import com.easysystems.easyorder.data.OrderDTO
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -11,8 +10,8 @@ import retrofit2.http.Path
 interface RetrofitOrder {
 
     @GET("orders/{id}")
-    fun retrieveOrderById(@Path("id") id: Int) : Call<Order>
+    fun retrieveOrderById(@Path("id") id: Int) : Call<OrderDTO>
 
     @POST("orders")
-    fun createOrder(@Body order: Order) : Call<Order>
+    fun createOrder(@Body orderDTO: OrderDTO) : Call<OrderDTO>
 }

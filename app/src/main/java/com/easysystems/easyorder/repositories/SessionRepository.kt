@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import com.easysystems.easyorder.helpclasses.Settings
-import com.easysystems.easyorder.data.Session
+import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.ActivityMainBinding
 import com.easysystems.easyorder.retrofit.RetrofitSession
 import retrofit2.Call
@@ -16,32 +16,26 @@ import java.lang.Exception
 
 class SessionRepository {
 
-    lateinit var session: Session
+    lateinit var sessionDTO: SessionDTO
 
-    fun getSessionById(id: Int, context: Context, binding: ActivityMainBinding, callback:(Session?)->Unit) {
+    fun getSessionById(id: Int, context: Context, binding: ActivityMainBinding, callback:(SessionDTO?)->Unit) {
 
         val retrofitSession = generateRetrofitSession()
-        val call: Call<Session> = retrofitSession.retrieveSessionById(id)
+        val call: Call<SessionDTO> = retrofitSession.retrieveSessionById(id)
 
-        call.enqueue(object : Callback<Session> {
-            override fun onResponse(call: Call<Session>, response: Response<Session>) {
+        call.enqueue(object : Callback<SessionDTO> {
+            override fun onResponse(call: Call<SessionDTO>, response: Response<SessionDTO>) {
 
                 if (response.isSuccessful) {
 
                     try {
 
-                        session = response.body() as Session
-                        callback(session)
+                        sessionDTO = response.body() as SessionDTO
+                        callback(sessionDTO)
 
-                        Log.i("Info","Retrieved session successfully: $session")
+                        Log.i("Info","Retrieved session successfully: $sessionDTO")
 
                     } catch (ex: Exception) {
-
-                        Toast.makeText(
-                            context,
-                            "Session not found",
-                            Toast.LENGTH_LONG
-                        ).show()
 
                         Log.i("Info","Session not found: $ex")
                     }
@@ -50,7 +44,7 @@ class SessionRepository {
                 }
             }
 
-            override fun onFailure(call: Call<Session>, t: Throwable) {
+            override fun onFailure(call: Call<SessionDTO>, t: Throwable) {
 
                 Toast.makeText(
                     context,
@@ -63,30 +57,65 @@ class SessionRepository {
         })
     }
 
-    fun verifyTabletop(tabletopId: Int, authCode: String, context: Context, binding: ActivityMainBinding, callback:(Session?)->Unit) {
+    fun updateSession(id: Int, sessionDTO: SessionDTO, context: Context, binding: ActivityMainBinding, callback:(SessionDTO?)->Unit) {
+
+        var updatedSession = sessionDTO
 
         val retrofitSession = generateRetrofitSession()
-        val call: Call<Session> = retrofitSession.verifyAndRetrieveSessionByTabletop(tabletopId, authCode)
+        val call: Call<SessionDTO> = retrofitSession.updateSession(id, updatedSession)
 
-        call.enqueue(object : Callback<Session> {
-            override fun onResponse(call: Call<Session>, response: Response<Session>) {
+        call.enqueue(object : Callback<SessionDTO> {
+            override fun onResponse(call: Call<SessionDTO>, response: Response<SessionDTO>) {
 
                 if (response.isSuccessful) {
 
                     try {
 
-                        session = response.body() as Session
-                        callback(session)
+                        updatedSession = response.body() as SessionDTO
+                        callback(updatedSession)
 
-                        Log.i("Info","Retrieved session successfully: $session")
+                        Log.i("Info","Session updated successfully: $updatedSession")
 
                     } catch (ex: Exception) {
 
-                        Toast.makeText(
-                            context,
-                            "Session not found",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        Log.i("Info","Session not found: $ex")
+                    }
+                } else {
+                    Log.i("Info","Failed to update session for id: $id / $sessionDTO")
+                }
+            }
+
+            override fun onFailure(call: Call<SessionDTO>, t: Throwable) {
+
+                Toast.makeText(
+                    context,
+                    "Failed to update session!",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                Log.i("Info","Request failed with error: ${t.localizedMessage}")
+            }
+        })
+    }
+
+    fun verifyTabletop(tabletopId: Int, authCode: String, context: Context, binding: ActivityMainBinding, callback:(SessionDTO?)->Unit) {
+
+        val retrofitSession = generateRetrofitSession()
+        val call: Call<SessionDTO> = retrofitSession.verifyAndRetrieveSessionByTabletop(tabletopId, authCode)
+
+        call.enqueue(object : Callback<SessionDTO> {
+            override fun onResponse(call: Call<SessionDTO>, response: Response<SessionDTO>) {
+
+                if (response.isSuccessful) {
+
+                    try {
+
+                        sessionDTO = response.body() as SessionDTO
+                        callback(sessionDTO)
+
+                        Log.i("Info","Retrieved session successfully: $sessionDTO")
+
+                    } catch (ex: Exception) {
 
                         Log.i("Info","Session not found: $ex")
                     }
@@ -95,7 +124,7 @@ class SessionRepository {
                 }
             }
 
-            override fun onFailure(call: Call<Session>, t: Throwable) {
+            override fun onFailure(call: Call<SessionDTO>, t: Throwable) {
 
                 Toast.makeText(
                     context,

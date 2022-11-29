@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import java.lang.Exception
 import java.lang.Long.getLong
 
 object SharedPreferencesHelper {
@@ -51,17 +52,29 @@ object SharedPreferencesHelper {
         when (type) {
 
             "STRING" -> {
-                return sharedPreferences.getString(key, null).toString()
+                try {
+                    return sharedPreferences.getString(key, null).toString()
+                } catch (ex: Exception) {
+                    Log.i("Info","Preference not found: $ex")
+                }
             }
             "INT" -> {
-                return sharedPreferences.getInt(key, 0)
+                try {
+                    return sharedPreferences.getInt(key, 0)
+                } catch (ex: Exception) {
+                    Log.i("Info","Preference not found: $ex")
+                }
             }
             "DOUBLE" -> {
-                return getLong(
-                    key,
-                    java.lang.Double.doubleToRawLongBits(0.0)
-                )?.let {
-                    java.lang.Double.longBitsToDouble(it)
+                try {
+                    return getLong(
+                        key,
+                        java.lang.Double.doubleToRawLongBits(0.0)
+                    )?.let {
+                        java.lang.Double.longBitsToDouble(it)
+                    }
+                } catch (ex: Exception) {
+                    Log.i("Info","Preference not found: $ex")
                 }
             }
             else -> {
@@ -78,5 +91,7 @@ object SharedPreferencesHelper {
         val editor = sharedPreferences.edit()
         editor.clear()
         editor.apply()
+
+        Log.i("Info", "Preferences cleared for set name: $setName")
     }
 }

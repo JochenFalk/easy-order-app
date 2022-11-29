@@ -174,4 +174,38 @@
         app:srcCompat="@drawable/ic_baseline_credit_card_24"
         app:tint="@color/white" />
 
+    <Button
+        android:id="@+id/btnCloseSession"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:elevation="2dp"
+        android:gravity="start|center_vertical"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingStart="60dp"
+        android:paddingEnd="0dp"
+        android:stateListAnimator="@null"
+        android:text="@string/btnCheckout"
+        android:textAllCaps="false"
+        android:visibility="gone"
+        app:cornerRadius="0dp"
+        app:iconPadding="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/frame" />
+
+    <ImageView
+        android:id="@+id/iconCloseSession"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_marginStart="10dp"
+        android:elevation="2dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/frame"
+        app:srcCompat="@drawable/ic_baseline_credit_card_24"
+        app:tint="@color/white" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

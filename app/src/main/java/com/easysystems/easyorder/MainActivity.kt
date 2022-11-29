@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
@@ -22,6 +23,7 @@ import java.text.NumberFormat
 
 class MainActivity : AppCompatActivity() {
 
+    private var elementState = ElementState.WELCOME
     private var itemRepository = ItemRepository()
     private var orderRepository = OrderRepository()
     private var sessionRepository = SessionRepository()
@@ -30,29 +32,56 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     companion object {
-        lateinit var sessionDTO: SessionDTO
+        var sessionDTO = SessionDTO()
+        var menuItems = ArrayList<ItemDTO>()
         const val RESULT = "RESULT"
+    }
+
+    enum class ElementState {
+        WELCOME,
+        MENU,
+        ORDERS,
+        PAYMENT
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        sharedPreferencesHelper.clearPreferences(this, "sessionData")
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        binding.btnScan.setOnClickListener {
+            val intent = Intent(applicationContext, ScannerActivity::class.java)
+            startActivity(intent)
+        }
 
         binding.btnOrders.setOnClickListener {
             callOrderListFragment(sessionDTO)
         }
+
+        binding.btnCheckout.setOnClickListener {
+            callPaymentFragment(sessionDTO)
+        }
+
+        binding.btnCloseSession.setOnClickListener {
+            closeSession()
+        }
+
+        loadMenuItems()
     }
 
     private fun getSession(id: Int) {
+
+        sharedPreferencesHelper.clearPreferences(this@MainActivity, "sessionData")
 
         sessionRepository.getSessionById(id, this@MainActivity, binding) { session ->
             if (session != null) {
                 session.orders?.sortBy { it.id }
                 sessionDTO = session
+
+                sharedPreferencesHelper
+                    .savePreferences(this, "sessionData", "sessionId", intValue = session.id)
+
                 loadSessionInfo()
             }
         }
@@ -60,20 +89,30 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadSessionInfo() {
 
-        when (sessionDTO.status.toString()) {
+        when (sessionDTO.status) {
 
-            "OPENED" -> {
-                loadMenuItems()
+            SessionDTO.Status.OPENED -> {
+                callItemListFragment(sessionDTO, menuItems)
                 updateMainActivity()
                 Log.i("Info", "Session status is opened")
             }
-            "CLOSED" -> {
+            SessionDTO.Status.CLOSED -> {
+                sharedPreferencesHelper.clearPreferences(this, "sessionData")
+                startScanningActivity()
                 Log.i("Info", "Session status is closed")
             }
-            "LOCKED" -> {
+            SessionDTO.Status.LOCKED -> {
+                Toast.makeText(
+                    this@MainActivity,
+                    "This session is locked because another person is performing a payment.",
+                    Toast.LENGTH_LONG
+                )
+                    .show()
                 Log.i("Info", "Session status is locked")
+                toggleElements(ElementState.WELCOME)
             }
             else -> {
+                toggleElements(ElementState.WELCOME)
                 startScanningActivity()
             }
         }
@@ -83,8 +122,7 @@ class MainActivity : AppCompatActivity() {
 
         itemRepository.getAllItems(this@MainActivity, binding) {
             if (it != null) {
-                toggleElements("MAIN")
-                callItemListFragment(sessionDTO, it)
+                menuItems = it
             }
         }
     }
@@ -117,9 +155,6 @@ class MainActivity : AppCompatActivity() {
         sessionRepository.verifyTabletop(tabletopId, authCode, this@MainActivity, binding) {
             if (it != null) {
                 sessionDTO = it
-                sharedPreferencesHelper
-                    .savePreferences(this, "sessionData", "sessionId", intValue = it.id)
-
                 if (it.orders?.size == 0) {
                     createNewOrder(it)
                 } else {
@@ -129,21 +164,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun callItemListFragment(sessionDTO: SessionDTO, itemDTOList: ArrayList<ItemDTO>) {
+    private fun callItemListFragment(session: SessionDTO, itemList: ArrayList<ItemDTO>) {
 
         val bundle = Bundle()
-        bundle.putSerializable("session", sessionDTO as Serializable)
-        bundle.putSerializable("itemList", itemDTOList as Serializable?)
+        bundle.putSerializable("session", session as Serializable)
+        bundle.putSerializable("itemList", itemList as Serializable?)
 
         val fragmentManager: FragmentManager = supportFragmentManager
         val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
-        val itemListFragment = ItemListFragment()
+        val itemListFragment = ItemListFragment(this@MainActivity)
 
         itemListFragment.arguments = bundle
-        fragmentTransaction.replace(R.id.frame, itemListFragment)
+        fragmentTransaction.replace(R.id.frame, itemListFragment).addToBackStack(null)
         fragmentTransaction.commit()
 
-        toggleElements("ORDERS")
+        toggleElements(ElementState.MENU)
     }
 
     private fun callOrderListFragment(sessionDTO: SessionDTO) {
@@ -159,36 +194,58 @@ class MainActivity : AppCompatActivity() {
         fragmentTransaction.replace(R.id.frame, orderListFragment).addToBackStack(null)
         fragmentTransaction.commit()
 
-        toggleElements("PAYMENT")
+        toggleElements(ElementState.ORDERS)
     }
 
-    private fun updateMainActivity() {
+    private fun callPaymentFragment(sessionDTO: SessionDTO) {
 
-        val decimal: NumberFormat = DecimalFormat("00.00")
-        val session = sessionDTO
-        val sessionTotal = session.total
-        val order = sessionDTO.orders?.last()
-        val orderTotal = order?.total
-        val count = order?.items?.size
-        val orderBtnText = "View and send your order (€ ${decimal.format(orderTotal)})"
-        val checkoutBtnText = "Click and pay your total bill (€ ${decimal.format(sessionTotal)})"
+        Companion.sessionDTO.status = SessionDTO.Status.LOCKED
+        Companion.sessionDTO.orders?.last()?.status = OrderDTO.Status.SENT
 
-        binding.iconOrdersBadge.text = count.toString()
-        binding.btnOrders.text = orderBtnText
-        binding.btnCheckout.text = checkoutBtnText
-    }
+        updateSession(sessionDTO) {
 
-    private fun updateSession(sessionDTO: SessionDTO) {
+            val bundle = Bundle()
+            bundle.putSerializable("session", sessionDTO as Serializable)
 
-        sessionDTO.id?.let { id ->
-            sessionRepository.updateSession(id, sessionDTO, this@MainActivity, binding) { session ->
-                if (session != null) {
-                    session.orders?.sortBy { it.id }
-                    MainActivity.sessionDTO = session
-                }
-                loadSessionInfo()
-            }
+            val fragmentManager: FragmentManager = supportFragmentManager
+            val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
+            val paymentFragment = PaymentFragment(this@MainActivity)
+
+            paymentFragment.arguments = bundle
+            fragmentTransaction.replace(R.id.frame, paymentFragment).addToBackStack(null)
+            fragmentTransaction.commit()
+
+            toggleElements(ElementState.PAYMENT)
         }
+    }
+
+    private fun closeSession() {
+
+        sessionDTO.status = SessionDTO.Status.CLOSED
+        sessionDTO.orders?.last()?.status = OrderDTO.Status.SENT
+
+        updateSession(sessionDTO) {
+
+            if (it != null) sessionDTO = it
+
+            supportFragmentManager.apply {
+                for (fragment in fragments) {
+                    beginTransaction().remove(fragment).commit()
+                }
+                popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+            }
+
+            sharedPreferencesHelper.clearPreferences(this, "sessionData")
+
+            Toast.makeText(
+                this@MainActivity, "Payment received :). Thank you for using EasyOrder services.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            toggleElements(ElementState.WELCOME)
+        }
+
+        Log.i("Info", "Add stuff to complete payment")
     }
 
     override fun onResume() {
@@ -207,20 +264,46 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
 
-        val sessionId = sessionDTO.id
-
-        if (sessionId != null) {
-            updateSession(sessionDTO)
-            sharedPreferencesHelper
-                .savePreferences(this, "sessionData", "sessionId", intValue = sessionId)
+        updateSession(sessionDTO) {
+            if (it != null) {
+                sharedPreferencesHelper
+                    .savePreferences(this, "sessionData", "sessionId", intValue = it.id)
+            }
         }
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
+    fun updateMainActivity() {
 
-        supportFragmentManager.popBackStack()
-        toggleElements("ORDERS")
+        val decimal: NumberFormat = DecimalFormat("00.00")
+        val session = sessionDTO
+        val sessionTotal = session.total
+        val order = sessionDTO.orders?.last()
+        val count = order?.items?.size
+
+        val orderBtnText =
+            "View and send orders (Total: € ${decimal.format(sessionTotal)})"
+        val checkoutBtnText =
+            "Select payment options (Total: € ${decimal.format(sessionTotal)})"
+        val closeSessionBtnText =
+            "Click to pay (Total € ${decimal.format(sessionTotal)})"
+
+        binding.iconOrdersBadge.text = count.toString()
+        binding.btnOrders.text = orderBtnText
+        binding.btnCheckout.text = checkoutBtnText
+        binding.btnCloseSession.text = closeSessionBtnText
+    }
+
+    fun updateSession(sessionDTO: SessionDTO, callback: (SessionDTO?) -> Unit) {
+
+        sessionDTO.id?.let { id ->
+            sessionRepository.updateSession(id, sessionDTO, this@MainActivity, binding) { session ->
+                if (session != null) {
+                    session.orders?.sortBy { it.id }
+                    MainActivity.sessionDTO = session
+                    callback(session)
+                }
+            }
+        }
     }
 
     fun passSessionToActivity(sessionDTO: SessionDTO) {
@@ -236,18 +319,22 @@ class MainActivity : AppCompatActivity() {
                 orderRepository.createOrder(id, this@MainActivity, binding) { order ->
                     orders.add(order as OrderDTO).apply {
                         orders.sortBy { it.id }
-                        updateSession(sessionDTO)
+                        updateSession(sessionDTO) {
+                            loadSessionInfo()
+                        }
                     }
                 }
             }
         }
     }
 
-    fun toggleElements(elementState: String) {
+    fun toggleElements(state: ElementState) {
 
-        when (elementState) {
+        elementState = state
 
-            "MAIN" -> {
+        when (state) {
+
+            ElementState.WELCOME -> {
                 binding.btnOrders.isVisible = false
                 binding.iconOrders.isVisible = false
                 binding.iconOrdersBadge.isVisible = false
@@ -255,11 +342,13 @@ class MainActivity : AppCompatActivity() {
                 binding.iconScan.isVisible = true
                 binding.btnCheckout.isVisible = false
                 binding.iconCheckout.isVisible = false
+                binding.btnCloseSession.isVisible = false
+                binding.iconCloseSession.isVisible = false
                 binding.textViewInstructions.isVisible = true
                 binding.textViewWelcome.isVisible = true
                 binding.frame.setBackgroundResource(R.drawable.welcome)
             }
-            "ORDERS" -> {
+            ElementState.MENU -> {
                 binding.btnOrders.isVisible = true
                 binding.iconOrders.isVisible = true
                 binding.iconOrdersBadge.isVisible = true
@@ -267,19 +356,26 @@ class MainActivity : AppCompatActivity() {
                 binding.iconScan.isVisible = false
                 binding.btnCheckout.isVisible = false
                 binding.iconCheckout.isVisible = false
+                binding.btnCloseSession.isVisible = false
+                binding.iconCloseSession.isVisible = false
                 binding.textViewInstructions.isVisible = false
                 binding.textViewWelcome.isVisible = false
                 binding.frame.setBackgroundResource(0)
             }
-            "PAYMENT" -> {
+            ElementState.ORDERS -> {
                 binding.btnOrders.isVisible = false
                 binding.iconOrders.isVisible = false
                 binding.iconOrdersBadge.isVisible = false
                 binding.btnCheckout.isVisible = true
                 binding.iconCheckout.isVisible = true
+                binding.btnCloseSession.isVisible = false
+                binding.iconCloseSession.isVisible = false
             }
-            else -> {
-                Log.w("Warning", "Provided element state ($elementState) is not a valid parameter!")
+            ElementState.PAYMENT -> {
+                binding.btnCheckout.isVisible = false
+                binding.iconCheckout.isVisible = false
+                binding.btnCloseSession.isVisible = true
+                binding.iconCloseSession.isVisible = true
             }
         }
     }

@@ -17,7 +17,7 @@ data class OrderDTO(
 ) : Serializable {
     enum class Status {
         OPENED,
-        CLOSED,
+        SENT,
         LOCKED
     }
 }

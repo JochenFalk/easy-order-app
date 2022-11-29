@@ -82,6 +82,6 @@ class ScannerActivity : AppCompatActivity(), ZXingScannerView.ResultHandler {
 
     override fun onBackPressed() {
         super.onBackPressed()
-        finish()
+//        finish()
     }
 }

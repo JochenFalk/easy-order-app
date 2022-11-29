@@ -1,7 +1,6 @@
 package com.easysystems.easyorder
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,11 +9,12 @@ import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import com.easysystems.easyorder.adapters.CustomExpandableListAdapter
 import com.easysystems.easyorder.data.OrderDTO
-import com.easysystems.easyorder.databinding.FragmentOrdersBinding
+import com.easysystems.easyorder.data.SessionDTO
+import com.easysystems.easyorder.databinding.FragmentPaymentBinding
 
-class OrderListFragment(private val activity: MainActivity) : Fragment() {
+class PaymentFragment(private val activity: MainActivity) : Fragment() {
 
-    private lateinit var binding: FragmentOrdersBinding
+    private lateinit var binding: FragmentPaymentBinding
 
     private var listView: ExpandableListView? = null
     private var listAdapter: ExpandableListAdapter? = null
@@ -25,8 +25,7 @@ class OrderListFragment(private val activity: MainActivity) : Fragment() {
         super.onCreate(savedInstanceState)
         activity.onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                activity.supportFragmentManager.popBackStack()
-                activity.toggleElements(MainActivity.ElementState.MENU)
+                resetPayment()
             }
         })
     }
@@ -36,7 +35,7 @@ class OrderListFragment(private val activity: MainActivity) : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
 
-        binding = FragmentOrdersBinding.inflate(inflater, container, false)
+        binding = FragmentPaymentBinding.inflate(inflater, container, false)
 
         val sessionDTO = MainActivity.sessionDTO
 
@@ -48,68 +47,6 @@ class OrderListFragment(private val activity: MainActivity) : Fragment() {
                 for (o in orders!!) {
                     count++
                     this.add("Order$count")
-                }
-            }
-        }
-
-        binding.btnClear.setOnClickListener {
-
-            var sessionTotal = sessionDTO.total
-            val order = sessionDTO.orders?.last()
-            val orderTotal = order?.total
-
-            if (sessionTotal != null && orderTotal != null) {
-                sessionTotal -= orderTotal
-
-                sessionDTO.total = sessionTotal
-                order.total = 0.0
-                order.items?.clear()
-                order.status = OrderDTO.Status.OPENED
-
-//                activity.passSessionToActivity(sessionDTO)
-                activity.updateMainActivity()
-                activity.supportFragmentManager.popBackStack()
-                activity.toggleElements(MainActivity.ElementState.MENU)
-
-                Toast.makeText(
-                    context,
-                    "Your order has been cleared :)",
-                    Toast.LENGTH_SHORT
-                )
-                    .show()
-
-                Log.i("Info", "Order with id ${order.id} has been cleared")
-            }
-        }
-
-        binding.btnSend.setOnClickListener {
-
-            val order = sessionDTO.orders?.last()
-
-            if (order != null) {
-
-                if (order.items?.size != 0) {
-
-                    order.status = OrderDTO.Status.SENT
-                    activity.createNewOrder(sessionDTO)
-                    activity.toggleElements(MainActivity.ElementState.MENU)
-
-                    Toast.makeText(
-                        context,
-                        "Your order has been sent :)",
-                        Toast.LENGTH_SHORT
-                    )
-                        .show()
-
-                    Log.i("Info", "Order with id ${order.id} has been sent")
-                } else {
-
-                    Toast.makeText(
-                        context,
-                        "Add some items before sending ;)",
-                        Toast.LENGTH_SHORT
-                    )
-                        .show()
                 }
             }
         }
@@ -148,5 +85,25 @@ class OrderListFragment(private val activity: MainActivity) : Fragment() {
         }
 
         return binding.root
+    }
+
+    override fun onPause() {
+        super.onPause()
+        resetPayment()
+    }
+
+    private fun resetPayment() {
+
+        val sessionDTO = MainActivity.sessionDTO
+
+        if (sessionDTO.status != SessionDTO.Status.CLOSED) {
+
+            sessionDTO.status = SessionDTO.Status.OPENED
+            sessionDTO.orders?.last()?.status = OrderDTO.Status.OPENED
+
+            activity.updateSession(sessionDTO) {}
+            activity.toggleElements(MainActivity.ElementState.MENU)
+            activity.supportFragmentManager.popBackStack()
+        }
     }
 }

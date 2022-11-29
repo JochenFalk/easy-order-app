@@ -3,9 +3,11 @@ package com.easysystems.easyorder.repositories
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.helpclasses.Settings
 import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.ActivityMainBinding
+import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
 import com.easysystems.easyorder.retrofit.RetrofitSession
 import retrofit2.Call
 import retrofit2.Callback
@@ -16,6 +18,7 @@ import java.lang.Exception
 
 class SessionRepository {
 
+    private val sharedPreferencesHelper = SharedPreferencesHelper
     lateinit var sessionDTO: SessionDTO
 
     fun getSessionById(id: Int, context: Context, binding: ActivityMainBinding, callback:(SessionDTO?)->Unit) {
@@ -98,7 +101,7 @@ class SessionRepository {
         })
     }
 
-    fun verifyTabletop(tabletopId: Int, authCode: String, context: Context, binding: ActivityMainBinding, callback:(SessionDTO?)->Unit) {
+    fun verifyTabletop(tabletopId: Int, authCode: String, context: Context, binding: ActivityMainBinding, callback: (SessionDTO?)->Unit) {
 
         val retrofitSession = generateRetrofitSession()
         val call: Call<SessionDTO> = retrofitSession.verifyAndRetrieveSessionByTabletop(tabletopId, authCode)

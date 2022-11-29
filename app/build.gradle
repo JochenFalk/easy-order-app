@@ -68,4 +68,7 @@ dependencies {
     implementation 'com.joanzapata.iconify:android-iconify-weathericons:2.2.2' // (v2.0)
     implementation 'com.joanzapata.iconify:android-iconify-simplelineicons:2.2.2' // (v1.0.0)
     implementation 'com.joanzapata.iconify:android-iconify-ionicons:2.2.2' // (v2.0.1)
+
+    // mollie OkHttp
+    compile 'com.squareup.okhttp3:okhttp:3.5.0'
 }

@@ -16,8 +16,6 @@ import java.lang.Exception
 
 class ItemRepository {
 
-    lateinit var itemDTO: ItemDTO
-
     fun getAllItems(context: Context, binding: ActivityMainBinding, callback:(ArrayList<ItemDTO>?)->Unit) {
 
         val retrofitItem = generateRetrofitItem()

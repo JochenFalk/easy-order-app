@@ -3,6 +3,7 @@ package com.easysystems.easyorder.repositories
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import com.easysystems.easyorder.data.ItemDTO
 import com.easysystems.easyorder.data.OrderDTO
 import com.easysystems.easyorder.helpclasses.Settings
 import com.easysystems.easyorder.databinding.ActivityMainBinding
@@ -81,7 +82,7 @@ class OrderRepository {
                         Log.i("Info","Failed to create order: $ex")
                     }
                 } else {
-                    Log.i("Info","Failed to create order with session id: $sessionId")
+                    Log.i("Info","Failed to create order with session id: $sessionId. Bad response: $response")
                 }
             }
 

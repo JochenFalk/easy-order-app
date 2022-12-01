@@ -2,24 +2,36 @@ package com.easysystems.easyorder
 
 import android.content.Intent
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.StrictMode
+import android.os.StrictMode.ThreadPolicy
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
-import com.easysystems.easyorder.repositories.ItemRepository
-import com.easysystems.easyorder.repositories.SessionRepository
 import com.easysystems.easyorder.data.ItemDTO
+import com.easysystems.easyorder.data.MolliePayment
 import com.easysystems.easyorder.data.OrderDTO
 import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.ActivityMainBinding
 import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
+import com.easysystems.easyorder.repositories.ItemRepository
 import com.easysystems.easyorder.repositories.OrderRepository
+import com.easysystems.easyorder.repositories.SessionRepository
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
 import java.io.Serializable
+import java.net.URL
 import java.text.DecimalFormat
 import java.text.NumberFormat
+import java.util.*
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
@@ -68,6 +80,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         loadMenuItems()
+
+        val action: String? = intent?.action
+        if (action === Intent.ACTION_VIEW) {
+            val data: Uri? = intent?.data
+//            val paymentId: String? = data?.getQueryParameter("id")
+//            Optional: Do stuff with the payment ID
+
+            Log.i("Info", "${data.toString()}")
+        }
     }
 
     private fun getSession(id: Int) {
@@ -142,10 +163,13 @@ class MainActivity : AppCompatActivity() {
             } else {
 
                 val result: List<String> = it.split("-")
-                val tabletopId = result[0].toInt()
-                val authCode = result[1]
 
-                verifyTable(tabletopId, authCode)
+                if (result.size == 2) {
+                    val tabletopId = result[0].toInt()
+                    val authCode = result[1]
+
+                    verifyTable(tabletopId, authCode)
+                }
             }
         }
     }
@@ -246,6 +270,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         Log.i("Info", "Add stuff to complete payment")
+        createMolliePayment(sessionDTO)
     }
 
     override fun onResume() {
@@ -313,10 +338,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun createNewOrder(sessionDTO: SessionDTO) {
-        sessionDTO.id?.let { id ->
+        sessionDTO.id?.let { sessionId ->
             val orders = sessionDTO.orders
             if (orders != null) {
-                orderRepository.createOrder(id, this@MainActivity, binding) { order ->
+                orderRepository.createOrder(sessionId, this@MainActivity, binding) { order ->
                     orders.add(order as OrderDTO).apply {
                         orders.sortBy { it.id }
                         updateSession(sessionDTO) {
@@ -377,6 +402,92 @@ class MainActivity : AppCompatActivity() {
                 binding.btnCloseSession.isVisible = true
                 binding.iconCloseSession.isVisible = true
             }
+        }
+    }
+
+    private val CONNECT_TIMEOUT = 15L
+    private val READ_TIMEOUT = 15L
+    private val WRITE_TIMEOUT = 15L
+
+    private fun createMolliePayment(sessionDTO: SessionDTO) {
+
+        val policy = ThreadPolicy.Builder().permitAll().build()
+        StrictMode.setThreadPolicy(policy)
+
+        val decimal: NumberFormat = DecimalFormat("0.00")
+        val amount = decimal.format(sessionDTO.total).replace(',', '.')
+        val urlString = "https://api.mollie.com/v2/payments"
+        val jsonString = "{\n" +
+                "    \"description\": \"Session #${sessionDTO.id.toString()} \",\n" +
+                "    \"redirectUrl\": \"mollie-app://payment-return\",\n" +
+                "    \"amount\": \n" +
+                "    {\n" +
+                "      \"currency\": \"EUR\",\n" +
+                "      \"value\": \"$amount\"\n" +
+                "    }\n" +
+                "}"
+        val token = "Bearer test_yGsWtqGQQuKvNs4qtDEtsusscVdDAU"
+
+        val client = OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            .build()
+
+        val body =
+            jsonString.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+
+        val request = Request.Builder()
+            .url(URL(urlString))
+            .header("Authorization", token)
+            .post(body)
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+
+                val mapper = jacksonObjectMapper()
+                val responseJSON = response.body?.string()
+                val molliePayment = mapper.readValue(responseJSON, MolliePayment::class.java)
+
+                Log.i("Info", "Payment created: $molliePayment")
+
+                val browserIntent = Intent(Intent.ACTION_VIEW)
+                browserIntent.data = Uri.parse(molliePayment.links.checkout.href)
+                startActivity(browserIntent)
+
+                Log.i("Info", "Redirecting to Mollie checkout")
+
+            } else {
+                Log.i("Info", "Payment creation failed")
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            Log.i("Info", "Payment creation failed: $e")
+        }
+    }
+
+    private fun performGetOperation(urlString: String, token: String): String? {
+        return try {
+            val client = OkHttpClient.Builder()
+                .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+                .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+                .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+                .build()
+
+            val request = Request.Builder()
+                .url(URL(urlString))
+                .header("Authorization", token)
+                .get()
+                .build()
+
+            val response = client.newCall(request).execute()
+            response.body?.string()
+        } catch (e: IOException) {
+            e.printStackTrace()
+            Log.i("Info", "Request to mollie failed: $e")
+            null
         }
     }
 }

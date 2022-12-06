@@ -3,10 +3,9 @@ package com.easysystems.easyorder.repositories
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import com.easysystems.easyorder.MainActivity
-import com.easysystems.easyorder.helpclasses.Settings
 import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.ActivityMainBinding
+import com.easysystems.easyorder.helpclasses.AppSettings
 import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
 import com.easysystems.easyorder.retrofit.RetrofitSession
 import retrofit2.Call
@@ -55,7 +54,7 @@ class SessionRepository {
                     Toast.LENGTH_LONG
                 ).show()
 
-                Log.i("Info","Request failed with error: ${t.localizedMessage}")
+                Log.i("Info","Request failed with error: ${t.printStackTrace()} ${t.localizedMessage}")
             }
         })
     }
@@ -96,7 +95,7 @@ class SessionRepository {
                     Toast.LENGTH_LONG
                 ).show()
 
-                Log.i("Info","Request failed with error: ${t.localizedMessage}")
+                Log.i("Info","Request failed with error: ${t.printStackTrace()} ${t.localizedMessage}")
             }
         })
     }
@@ -135,7 +134,7 @@ class SessionRepository {
                     Toast.LENGTH_LONG
                 ).show()
 
-                Log.i("Info","Request failed with error: ${t.localizedMessage}")
+                Log.i("Info","Request failed with error: ${t.printStackTrace()} ${t.localizedMessage}")
             }
         })
     }
@@ -143,7 +142,7 @@ class SessionRepository {
     private fun generateRetrofitSession(): RetrofitSession {
 
         val retrofit = Retrofit.Builder()
-            .baseUrl(Settings.baseURL)
+            .baseUrl(AppSettings.baseUrl)
             .addConverterFactory(JacksonConverterFactory.create())
             .build()
 

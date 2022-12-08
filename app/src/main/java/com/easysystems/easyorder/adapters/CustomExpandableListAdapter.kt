@@ -45,7 +45,7 @@ class CustomExpandableListAdapter(
             val listItem = view.findViewById(R.id.expandedListItem) as TextView
             val listPrice = view.findViewById(R.id.expandedListPrice) as TextView
 
-            val decimal: NumberFormat = DecimalFormat("0.00")
+            val decimal: NumberFormat = DecimalFormat("00.00")
             val item = getChild(orderPosition, itemPosition) as ItemDTO
             val price = item.price
             val priceAsString = "€ ${decimal.format(price)}"
@@ -94,7 +94,7 @@ class CustomExpandableListAdapter(
             val title = getGroup(listPosition) as String
             val items = sessionDTO.orders?.get(listPosition)?.items
 
-            val decimal: NumberFormat = DecimalFormat("0.00")
+            val decimal: NumberFormat = DecimalFormat("00.00")
             val order = orders?.get(listPosition)
             var total = 0.0
 

@@ -3,9 +3,9 @@ package com.easysystems.easyorder.repositories
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import com.easysystems.easyorder.helpclasses.Settings
 import com.easysystems.easyorder.data.ItemDTO
 import com.easysystems.easyorder.databinding.ActivityMainBinding
-import com.easysystems.easyorder.helpclasses.AppSettings
 import com.easysystems.easyorder.retrofit.RetrofitItem
 import retrofit2.Call
 import retrofit2.Callback
@@ -65,7 +65,7 @@ class ItemRepository {
     private fun generateRetrofitItem(): RetrofitItem {
 
         val retrofit = Retrofit.Builder()
-            .baseUrl(AppSettings.baseUrl)
+            .baseUrl(Settings.baseURL)
             .addConverterFactory(JacksonConverterFactory.create())
             .build()
 

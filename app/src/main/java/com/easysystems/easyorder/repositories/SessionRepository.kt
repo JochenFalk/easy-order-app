@@ -3,9 +3,10 @@ package com.easysystems.easyorder.repositories
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import com.easysystems.easyorder.MainActivity
+import com.easysystems.easyorder.helpclasses.Settings
 import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.ActivityMainBinding
-import com.easysystems.easyorder.helpclasses.AppSettings
 import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
 import com.easysystems.easyorder.retrofit.RetrofitSession
 import retrofit2.Call
@@ -142,7 +143,7 @@ class SessionRepository {
     private fun generateRetrofitSession(): RetrofitSession {
 
         val retrofit = Retrofit.Builder()
-            .baseUrl(AppSettings.baseUrl)
+            .baseUrl(Settings.baseURL)
             .addConverterFactory(JacksonConverterFactory.create())
             .build()
 

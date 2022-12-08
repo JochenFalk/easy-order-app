@@ -91,7 +91,7 @@ class OrderListFragment(private val activity: MainActivity) : Fragment() {
                 if (order.items?.size != 0) {
 
                     order.status = OrderDTO.Status.SENT
-                    activity.createOrder(sessionDTO)
+                    activity.createNewOrder(sessionDTO)
                     activity.toggleElements(MainActivity.ElementState.MENU)
 
                     Toast.makeText(

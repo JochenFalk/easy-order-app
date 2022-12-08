@@ -6,8 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
 // -> https://plugins.jetbrains.com/plugin/9960-json-to-kotlin-class-jsontokotlinclass-/
 
 data class MolliePayment(
-    @JsonProperty("molliePaymentId")
-    val molliePaymentId: Int? = 0,
     @JsonProperty("amount")
     val amount: Amount,
     @JsonProperty("createdAt")
@@ -21,7 +19,7 @@ data class MolliePayment(
     @JsonProperty("isCancelable")
     val isCancelable: Boolean,
     @JsonProperty("_links")
-    val links: Links?,
+    val links: Links,
     @JsonProperty("metadata")
     val metadata: Any?,
     @JsonProperty("method")
@@ -32,16 +30,12 @@ data class MolliePayment(
     val profileId: String,
     @JsonProperty("redirectUrl")
     val redirectUrl: String,
-    @JsonProperty("webhookUrl")
-    val webhookUrl: String,
     @JsonProperty("resource")
     val resource: String,
     @JsonProperty("sequenceType")
     val sequenceType: String,
     @JsonProperty("status")
-    val status: String,
-    @JsonProperty("sessionId")
-    var sessionId: Int
+    val status: String
 )
 
 data class Amount(

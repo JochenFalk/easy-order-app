@@ -1,36 +1,37 @@
 package com.easysystems.easyorder
 
-import android.Manifest
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.net.wifi.SupplicantState
-import android.net.wifi.WifiInfo
-import android.net.wifi.WifiManager
 import android.os.Bundle
+import android.os.StrictMode
+import android.os.StrictMode.ThreadPolicy
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.easysystems.easyorder.data.ItemDTO
+import com.easysystems.easyorder.data.MolliePayment
 import com.easysystems.easyorder.data.OrderDTO
 import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.ActivityMainBinding
-import com.easysystems.easyorder.helpclasses.AppSettings
 import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
 import com.easysystems.easyorder.repositories.ItemRepository
-import com.easysystems.easyorder.repositories.MolliePaymentRepository
 import com.easysystems.easyorder.repositories.OrderRepository
 import com.easysystems.easyorder.repositories.SessionRepository
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
 import java.io.Serializable
+import java.net.URL
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
@@ -38,7 +39,6 @@ class MainActivity : AppCompatActivity() {
     private var itemRepository = ItemRepository()
     private var orderRepository = OrderRepository()
     private var sessionRepository = SessionRepository()
-    private var molliePaymentRepository = MolliePaymentRepository()
     private val sharedPreferencesHelper = SharedPreferencesHelper
 
     private lateinit var binding: ActivityMainBinding
@@ -76,7 +76,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnCloseSession.setOnClickListener {
-            createMolliePayment(sessionDTO)
+            closeSession()
+        }
+
+        loadMenuItems()
+
+        val action: String? = intent?.action
+        if (action === Intent.ACTION_VIEW) {
+            val data: Uri? = intent?.data
+//            val paymentId: String? = data?.getQueryParameter("id")
+//            Optional: Do stuff with the payment ID
+
+            Log.i("Info", "${data.toString()}")
         }
     }
 
@@ -169,7 +180,7 @@ class MainActivity : AppCompatActivity() {
             if (it != null) {
                 sessionDTO = it
                 if (it.orders?.size == 0) {
-                    createOrder(it)
+                    createNewOrder(it)
                 } else {
                     loadSessionInfo()
                 }
@@ -234,9 +245,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun closeSession() {
 
-        // before closing the session app should check payment status received via webhook from Mollie
-        // not implemented yet, not receiving webhook?
-
         sessionDTO.status = SessionDTO.Status.CLOSED
         sessionDTO.orders?.last()?.status = OrderDTO.Status.SENT
 
@@ -260,39 +268,9 @@ class MainActivity : AppCompatActivity() {
 
             toggleElements(ElementState.WELCOME)
         }
-    }
 
-    private fun checkWifiConnection() {
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1
-            )
-        } else {
-
-            val wifiManager =
-                applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-            val wifiInfo: WifiInfo = wifiManager.connectionInfo
-
-            if (wifiInfo.supplicantState == SupplicantState.COMPLETED) {
-                AppSettings.setAppConfiguration(wifiInfo.ssid)
-                loadMenuItems()
-            }
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == 1 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            checkWifiConnection()
-        }
+        Log.i("Info", "Add stuff to complete payment")
+        createMolliePayment(sessionDTO)
     }
 
     override fun onResume() {
@@ -306,8 +284,6 @@ class MainActivity : AppCompatActivity() {
                     getSession(it)
                 }
             }
-
-        checkWifiConnection()
     }
 
     override fun onPause() {
@@ -323,7 +299,7 @@ class MainActivity : AppCompatActivity() {
 
     fun updateMainActivity() {
 
-        val decimal: NumberFormat = DecimalFormat("0.00")
+        val decimal: NumberFormat = DecimalFormat("00.00")
         val session = sessionDTO
         val sessionTotal = session.total
         val order = sessionDTO.orders?.last()
@@ -361,7 +337,7 @@ class MainActivity : AppCompatActivity() {
         updateMainActivity()
     }
 
-    fun createOrder(sessionDTO: SessionDTO) {
+    fun createNewOrder(sessionDTO: SessionDTO) {
         sessionDTO.id?.let { sessionId ->
             val orders = sessionDTO.orders
             if (orders != null) {
@@ -372,79 +348,6 @@ class MainActivity : AppCompatActivity() {
                             loadSessionInfo()
                         }
                     }
-                }
-            }
-        }
-    }
-
-    private fun createMolliePayment(sessionDTO: SessionDTO) {
-
-        if (sessionDTO.payment == null) {
-
-            val ngRokBaseURL = AppSettings.ngRokBaseURL
-            val mollieRedirectUrl = AppSettings.mollieRedirectUrl
-            val mollieWebhookMapping = AppSettings.mollieWebhookMapping
-            val decimal: NumberFormat = DecimalFormat("0.00")
-            val amount = decimal.format(sessionDTO.total).replace(',', '.')
-
-            val jsonString = "{\n" +
-                    "   \"description\": \"Session #${sessionDTO.id.toString()}\",\n" +
-                    "   \"redirectUrl\": \"$mollieRedirectUrl\",\n" +
-                    "   \"webhookUrl\": \"$ngRokBaseURL$mollieWebhookMapping\",\n" +
-                    "   \"amount\": \n" +
-                    "  {\n" +
-                    "    \"currency\": \"EUR\",\n" +
-                    "    \"value\": \"$amount\"\n" +
-                    "  }\n" +
-                    "}"
-
-            sessionDTO.id?.let { sessionId ->
-
-                if (amount != "0.0") {
-                    molliePaymentRepository.retrievePayment(
-                        jsonString,
-                        sessionId,
-                        this@MainActivity,
-                        binding
-                    ) { paymentFromMollie ->
-
-                        if (paymentFromMollie != null) {
-                            paymentFromMollie.sessionId = sessionId
-                            molliePaymentRepository.createPayment(
-                                sessionId,
-                                paymentFromMollie,
-                                this@MainActivity,
-                                binding
-                            ) { paymentFromBackend ->
-                                sessionDTO.payment = paymentFromBackend
-                                updateSession(sessionDTO) {
-                                    val checkoutUrl = paymentFromBackend?.checkoutUrl
-                                    if (checkoutUrl != null) {
-                                        val browserIntent = Intent(Intent.ACTION_VIEW)
-                                        browserIntent.data = Uri.parse(checkoutUrl)
-                                        startActivity(browserIntent)
-                                        closeSession()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Please add something to your order before starting a payment ;)",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-        } else {
-            sessionDTO.payment?.let {
-                val checkoutUrl = it.checkoutUrl
-                if (checkoutUrl != null) {
-                    val browserIntent = Intent(Intent.ACTION_VIEW)
-                    browserIntent.data = Uri.parse(checkoutUrl)
-                    startActivity(browserIntent)
                 }
             }
         }
@@ -499,6 +402,92 @@ class MainActivity : AppCompatActivity() {
                 binding.btnCloseSession.isVisible = true
                 binding.iconCloseSession.isVisible = true
             }
+        }
+    }
+
+    private val CONNECT_TIMEOUT = 15L
+    private val READ_TIMEOUT = 15L
+    private val WRITE_TIMEOUT = 15L
+
+    private fun createMolliePayment(sessionDTO: SessionDTO) {
+
+        val policy = ThreadPolicy.Builder().permitAll().build()
+        StrictMode.setThreadPolicy(policy)
+
+        val decimal: NumberFormat = DecimalFormat("0.00")
+        val amount = decimal.format(sessionDTO.total).replace(',', '.')
+        val urlString = "https://api.mollie.com/v2/payments"
+        val jsonString = "{\n" +
+                "    \"description\": \"Session #${sessionDTO.id.toString()} \",\n" +
+                "    \"redirectUrl\": \"mollie-app://payment-return\",\n" +
+                "    \"amount\": \n" +
+                "    {\n" +
+                "      \"currency\": \"EUR\",\n" +
+                "      \"value\": \"$amount\"\n" +
+                "    }\n" +
+                "}"
+        val token = "Bearer test_yGsWtqGQQuKvNs4qtDEtsusscVdDAU"
+
+        val client = OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+            .build()
+
+        val body =
+            jsonString.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+
+        val request = Request.Builder()
+            .url(URL(urlString))
+            .header("Authorization", token)
+            .post(body)
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+
+                val mapper = jacksonObjectMapper()
+                val responseJSON = response.body?.string()
+                val molliePayment = mapper.readValue(responseJSON, MolliePayment::class.java)
+
+                Log.i("Info", "Payment created: $molliePayment")
+
+                val browserIntent = Intent(Intent.ACTION_VIEW)
+                browserIntent.data = Uri.parse(molliePayment.links.checkout.href)
+                startActivity(browserIntent)
+
+                Log.i("Info", "Redirecting to Mollie checkout")
+
+            } else {
+                Log.i("Info", "Payment creation failed")
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            Log.i("Info", "Payment creation failed: $e")
+        }
+    }
+
+    private fun performGetOperation(urlString: String, token: String): String? {
+        return try {
+            val client = OkHttpClient.Builder()
+                .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+                .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+                .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+                .build()
+
+            val request = Request.Builder()
+                .url(URL(urlString))
+                .header("Authorization", token)
+                .get()
+                .build()
+
+            val response = client.newCall(request).execute()
+            response.body?.string()
+        } catch (e: IOException) {
+            e.printStackTrace()
+            Log.i("Info", "Request to mollie failed: $e")
+            null
         }
     }
 }

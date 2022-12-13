@@ -1,6 +1,7 @@
 package com.easysystems.easyorder
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -60,28 +61,39 @@ class PaymentFragment(private val activity: MainActivity) : Fragment() {
         listView = binding.listView
         listView!!.setAdapter(listAdapter)
 
-        listView!!.setOnGroupExpandListener { groupPosition ->
-//            Toast.makeText(
-//                context, (expandableListTitle as ArrayList<String>)[groupPosition] + " List Expanded.",
-//                Toast.LENGTH_SHORT
-//            ).show()
-        }
+        val spinner = binding.spinner.apply { this.setSelection(0, false) }
+        val staticAdapter = ArrayAdapter
+            .createFromResource(
+                requireContext(), R.array.payment_methods,
+                R.layout.spinner_item
+            )
+        staticAdapter
+            .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = staticAdapter
 
-        listView!!.setOnGroupCollapseListener { groupPosition ->
-//            Toast.makeText(
-//                context, (expandableListTitle as ArrayList<String>)[groupPosition] + " List Collapsed.",
-//                Toast.LENGTH_SHORT
-//            ).show()
-        }
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>, view: View?,
+                position: Int, id: Long
+            ) {
 
-        listView!!.setOnChildClickListener { _, _, groupPosition, childPosition, _ ->
-//            Toast.makeText(
-//                context,
-//                (expandableListTitle as ArrayList<String>)[groupPosition] + " -> "
-//                        + expandableListDetail!![(expandableListTitle as ArrayList<String>)[groupPosition]]!![childPosition],
-//                Toast.LENGTH_SHORT
-//            ).show()
-            false
+                val methodArray = requireContext().resources?.getStringArray(R.array.payment_methods)
+
+                if (methodArray != null) {
+
+                    val paymentMethod = parent.getItemAtPosition(position) as String
+
+                    when (paymentMethod) {
+                        methodArray[0] -> MainActivity.paymentMethod = paymentMethod
+                        methodArray[1] -> MainActivity.paymentMethod = "ideal"
+                        methodArray[2] -> MainActivity.paymentMethod = "creditcard"
+                        methodArray[3] -> MainActivity.paymentMethod = "applepay"
+                    }
+                }
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
         }
 
         return binding.root

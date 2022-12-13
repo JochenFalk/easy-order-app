@@ -9,7 +9,7 @@ object AppSettings {
     const val defaultBaseURL = "http://$defaultIpAddress:8080/v1/"
 
     private const val ngRokIpAddress =
-        "https://8e52-83-232-94-162.eu.ngrok.io"
+        "https://7760-83-232-94-162.eu.ngrok.io"
     const val ngRokBaseURL = "$ngRokIpAddress/v1/"
 
     const val mollieURLString = "https://api.mollie.com/v2/"
@@ -22,11 +22,10 @@ object AppSettings {
 
     fun setAppConfiguration(ssid: String) {
 
-//        if (ssid == """Mediaan""") {
-//            baseUrl = ngRokBaseURL
-//        }
-        baseUrl = ngRokBaseURL
+        if (ssid == "Mediaan") {
+            baseUrl = ngRokBaseURL
+        }
 
-        Log.i("Info", "BaseUrl is set to: $baseUrl. SSIS is: $ssid")
+        Log.i("Info", "SSID is: $ssid. BaseUrl is set to: $baseUrl")
     }
 }

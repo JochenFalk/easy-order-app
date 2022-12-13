@@ -17,9 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
-import com.easysystems.easyorder.data.ItemDTO
-import com.easysystems.easyorder.data.OrderDTO
-import com.easysystems.easyorder.data.SessionDTO
+import com.easysystems.easyorder.data.*
 import com.easysystems.easyorder.databinding.ActivityMainBinding
 import com.easysystems.easyorder.helpclasses.AppSettings
 import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
@@ -27,7 +25,6 @@ import com.easysystems.easyorder.repositories.ItemRepository
 import com.easysystems.easyorder.repositories.MolliePaymentRepository
 import com.easysystems.easyorder.repositories.OrderRepository
 import com.easysystems.easyorder.repositories.SessionRepository
-import java.io.Serializable
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.util.*
@@ -45,6 +42,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         var sessionDTO = SessionDTO()
+        var paymentMethod = ""
         var menuItems = ArrayList<ItemDTO>()
         const val RESULT = "RESULT"
     }
@@ -76,13 +74,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnCloseSession.setOnClickListener {
-            createMolliePayment(sessionDTO)
+            checkMolliePaymentStatus(sessionDTO, paymentMethod)
         }
     }
 
     private fun getSession(id: Int) {
 
-        sharedPreferencesHelper.clearPreferences(this@MainActivity, "sessionData")
+//        sharedPreferencesHelper.clearPreferences(this@MainActivity, "sessionData")
 
         sessionRepository.getSessionById(id, this@MainActivity, binding) { session ->
             if (session != null) {
@@ -112,14 +110,22 @@ class MainActivity : AppCompatActivity() {
                 Log.i("Info", "Session status is closed")
             }
             SessionDTO.Status.LOCKED -> {
-                Toast.makeText(
-                    this@MainActivity,
-                    "This session is locked because another person is performing a payment.",
-                    Toast.LENGTH_LONG
-                )
-                    .show()
-                Log.i("Info", "Session status is locked")
-                toggleElements(ElementState.WELCOME)
+
+                val savedStatus = sharedPreferencesHelper.retrievePreferences(this, "sessionData", "sessionStatus", "STRING")
+
+                if (savedStatus == "LOCKED") {
+                    resetPayment()
+                } else {
+
+                    Toast.makeText(
+                        this@MainActivity,
+                        "This session is locked because another person is performing a payment.",
+                        Toast.LENGTH_LONG
+                    )
+                        .show()
+                    Log.i("Info", "Session status is locked")
+                    toggleElements(ElementState.WELCOME)
+                }
             }
             SessionDTO.Status.CHANGED -> {
                 Log.i("Info", "Session status is changed")
@@ -183,15 +189,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun callItemListFragment(session: SessionDTO, itemList: ArrayList<ItemDTO>) {
 
-        val bundle = Bundle()
-        bundle.putSerializable("session", session as Serializable)
-        bundle.putSerializable("itemList", itemList as Serializable?)
-
         val fragmentManager: FragmentManager = supportFragmentManager
         val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
         val itemListFragment = ItemListFragment(this@MainActivity)
 
-        itemListFragment.arguments = bundle
         fragmentTransaction.replace(R.id.frame, itemListFragment).addToBackStack(null)
         fragmentTransaction.commit()
 
@@ -200,14 +201,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun callOrderListFragment(sessionDTO: SessionDTO) {
 
-        val bundle = Bundle()
-        bundle.putSerializable("session", sessionDTO as Serializable)
-
         val fragmentManager: FragmentManager = supportFragmentManager
         val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
         val orderListFragment = OrderListFragment(this@MainActivity)
 
-        orderListFragment.arguments = bundle
         fragmentTransaction.replace(R.id.frame, orderListFragment).addToBackStack(null)
         fragmentTransaction.commit()
 
@@ -216,19 +213,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun callPaymentFragment(sessionDTO: SessionDTO) {
 
-        Companion.sessionDTO.status = SessionDTO.Status.LOCKED
-        Companion.sessionDTO.orders?.last()?.status = OrderDTO.Status.SENT
+        sessionDTO.status = SessionDTO.Status.LOCKED
+        sessionDTO.orders?.last()?.status = OrderDTO.Status.SENT
 
         updateSession(sessionDTO) {
-
-            val bundle = Bundle()
-            bundle.putSerializable("session", sessionDTO as Serializable)
 
             val fragmentManager: FragmentManager = supportFragmentManager
             val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
             val paymentFragment = PaymentFragment(this@MainActivity)
 
-            paymentFragment.arguments = bundle
             fragmentTransaction.replace(R.id.frame, paymentFragment).addToBackStack(null)
             fragmentTransaction.commit()
 
@@ -317,8 +310,10 @@ class MainActivity : AppCompatActivity() {
             sessionDTO.status = SessionDTO.Status.OPENED
             sessionDTO.orders?.last()?.status = OrderDTO.Status.OPENED
 
-            updateSession(sessionDTO) {}
-            toggleElements(ElementState.MENU)
+            updateSession(sessionDTO) {
+                updateMainActivity()
+                callItemListFragment(sessionDTO, menuItems)
+            }
         }
     }
 
@@ -338,6 +333,7 @@ class MainActivity : AppCompatActivity() {
                 popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
             }
 
+            sessionDTO = SessionDTO()
             sharedPreferencesHelper.clearPreferences(this, "sessionData")
 
             Toast.makeText(
@@ -364,7 +360,8 @@ class MainActivity : AppCompatActivity() {
             val wifiInfo: WifiInfo = wifiManager.connectionInfo
 
             if (wifiInfo.supplicantState == SupplicantState.COMPLETED) {
-                AppSettings.setAppConfiguration(wifiInfo.ssid)
+                val ssid = wifiInfo.ssid.toString().substring(1, wifiInfo.ssid.length - 1)
+                AppSettings.setAppConfiguration(ssid)
                 loadMenuItems()
             }
         }
@@ -382,6 +379,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+
+        updateSession(sessionDTO) {
+            if (it != null) {
+                sharedPreferencesHelper
+                    .savePreferences(this, "sessionData", "sessionId", intValue = it.id)
+                sharedPreferencesHelper
+                    .savePreferences(this, "sessionData", "sessionStatus", stringValue = it.status.toString())
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
 
@@ -395,17 +405,6 @@ class MainActivity : AppCompatActivity() {
             }
 
         checkWifiConnection()
-    }
-
-    override fun onPause() {
-        super.onPause()
-
-        updateSession(sessionDTO) {
-            if (it != null) {
-                sharedPreferencesHelper
-                    .savePreferences(this, "sessionData", "sessionId", intValue = it.id)
-            }
-        }
     }
 
     fun updateMainActivity() {
@@ -464,76 +463,111 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun createMolliePayment(sessionDTO: SessionDTO) {
+    private fun checkMolliePaymentStatus(sessionDTO: SessionDTO, paymentMethod: String) {
 
-        if (sessionDTO.payment == null) {
+        val methodArray = this@MainActivity.resources?.getStringArray(R.array.payment_methods)
 
-            val ngRokBaseURL = AppSettings.ngRokBaseURL
-            val mollieRedirectUrl = AppSettings.mollieRedirectUrl
-            val mollieWebhookMapping = AppSettings.mollieWebhookMapping
-            val decimal: NumberFormat = DecimalFormat("0.00")
-            val amount = decimal.format(sessionDTO.total).replace(',', '.')
+        if (methodArray != null) {
 
-            val jsonString = "{\n" +
-                    "   \"description\": \"Session #${sessionDTO.id.toString()}\",\n" +
-                    "   \"redirectUrl\": \"$mollieRedirectUrl\",\n" +
-                    "   \"webhookUrl\": \"$ngRokBaseURL$mollieWebhookMapping\",\n" +
-                    "   \"amount\": \n" +
-                    "  {\n" +
-                    "    \"currency\": \"EUR\",\n" +
-                    "    \"value\": \"$amount\"\n" +
-                    "  }\n" +
-                    "}"
+            if (paymentMethod != methodArray[0]) {
+                if (sessionDTO.payment != null) {
+                    if (sessionDTO.payment?.method != MainActivity.paymentMethod) {
+                        createMolliePayment(sessionDTO, MainActivity.paymentMethod)
+                    } else {
+                        when (sessionDTO.payment?.status?.uppercase()) {
+                            "OPEN" -> openMollieCheckout(sessionDTO.payment!!)
+                            "CANCELED" -> {
+                                createMolliePayment(sessionDTO, paymentMethod)
+                            }
+                            "PENDING" -> {}
+                            "AUTHORIZED" -> {}
+                            "EXPIRED" -> {
+                                createMolliePayment(sessionDTO, paymentMethod)
+                            }
+                            "FAILED" -> {}
+                            "PAID" -> {}
+                        }
+                    }
+                } else {
+                    createMolliePayment(sessionDTO, paymentMethod)
+                }
+            } else {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Please choose a payment method.",
+                    Toast.LENGTH_SHORT
+                )
+                    .show()
+            }
+        }
+    }
 
-            sessionDTO.id?.let { sessionId ->
+    private fun createMolliePayment(sessionDTO: SessionDTO, paymentMethod: String) {
 
-                if (amount != "0.0") {
-                    molliePaymentRepository.retrievePayment(
-                        jsonString,
-                        sessionId,
-                        this@MainActivity,
-                        binding
-                    ) { paymentFromMollie ->
+        val ngRokBaseURL = AppSettings.ngRokBaseURL
+        val mollieRedirectUrl = AppSettings.mollieRedirectUrl
+        val mollieWebhookMapping = AppSettings.mollieWebhookMapping
+        val decimal: NumberFormat = DecimalFormat("0.00")
+        val amount = decimal.format(sessionDTO.total).replace(',', '.')
 
-                        if (paymentFromMollie != null) {
-                            paymentFromMollie.sessionId = sessionId
-                            molliePaymentRepository.createPayment(
-                                sessionDTO,
-                                paymentFromMollie,
-                                this@MainActivity,
-                                binding
-                            ) { paymentFromBackend ->
-                                sessionDTO.payment = paymentFromBackend
-                                updateSession(sessionDTO) {
-                                    val checkoutUrl = paymentFromBackend?.checkoutUrl
-                                    if (checkoutUrl != null) {
-                                        sessionDTO.status = SessionDTO.Status.CHANGED
-                                        val browserIntent = Intent(Intent.ACTION_VIEW)
-                                        browserIntent.data = Uri.parse(checkoutUrl)
-                                        startActivity(browserIntent)
-                                    }
+        val jsonString = "{\n" +
+                "   \"description\": \"Session #${sessionDTO.id.toString()}\",\n" +
+                "   \"redirectUrl\": \"$mollieRedirectUrl\",\n" +
+                "   \"webhookUrl\": \"$ngRokBaseURL$mollieWebhookMapping\",\n" +
+                "   \"method\": \"$paymentMethod\",\n" +
+                "   \"amount\": \n" +
+                "  {\n" +
+                "    \"currency\": \"EUR\",\n" +
+                "    \"value\": \"$amount\"\n" +
+                "  }\n" +
+                "}"
+
+        sessionDTO.id?.let { sessionId ->
+
+            if (amount != "0.00") {
+                molliePaymentRepository.retrievePayment(
+                    jsonString,
+                    sessionId,
+                    this@MainActivity,
+                    binding
+                ) { paymentFromMollie ->
+
+                    if (paymentFromMollie != null) {
+                        paymentFromMollie.sessionId = sessionId
+                        molliePaymentRepository.createPayment(
+                            sessionDTO,
+                            paymentFromMollie,
+                            this@MainActivity,
+                            binding
+                        ) { paymentFromBackend ->
+                            sessionDTO.status = SessionDTO.Status.CHANGED
+                            sessionDTO.payment = paymentFromBackend
+
+                            updateSession(sessionDTO) {
+
+                                if (it != null) {
+                                    it.payment?.let { payment -> openMollieCheckout(payment) }
                                 }
                             }
                         }
                     }
-                } else {
+                }
+            } else {
 
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Please add something to your order before starting a payment ;)",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+                Toast.makeText(
+                    this@MainActivity,
+                    "Please add something to your order before starting a payment ;)",
+                    Toast.LENGTH_LONG
+                ).show()
             }
-        } else {
-            sessionDTO.payment?.let {
-                val checkoutUrl = it.checkoutUrl
-                if (checkoutUrl != null) {
-                    val browserIntent = Intent(Intent.ACTION_VIEW)
-                    browserIntent.data = Uri.parse(checkoutUrl)
-                    startActivity(browserIntent)
-                }
-            }
+        }
+    }
+
+    private fun openMollieCheckout(payment: MolliePaymentDTO) {
+        payment.checkoutUrl?.let {
+            val browserIntent = Intent(Intent.ACTION_VIEW)
+            browserIntent.data = Uri.parse(it)
+            startActivity(browserIntent)
         }
     }
 

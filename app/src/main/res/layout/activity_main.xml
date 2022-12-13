@@ -133,7 +133,6 @@
         android:layout_marginTop="-25dp"
         android:background="@drawable/badge_count"
         android:elevation="10dp"
-        android:text="99"
         android:textColor="@color/white"
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="@id/iconOrders"

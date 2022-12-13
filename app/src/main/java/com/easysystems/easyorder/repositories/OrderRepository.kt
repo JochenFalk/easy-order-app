@@ -48,13 +48,7 @@ class OrderRepository {
 
             override fun onFailure(call: Call<OrderDTO>, t: Throwable) {
 
-                Toast.makeText(
-                    context,
-                    "Failed to create order!",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                Log.i("Info","Request failed with error: ${t.printStackTrace()} ${t.localizedMessage}")
+                Log.i("Info","Failed to create order. Error:  ${t.localizedMessage}")
             }
         })
     }
@@ -87,13 +81,7 @@ class OrderRepository {
 
             override fun onFailure(call: Call<OrderDTO>, t: Throwable) {
 
-                Toast.makeText(
-                    context,
-                    "Failed to get order!",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                Log.i("Info","Request failed with error: ${t.printStackTrace()} ${t.localizedMessage}")
+                Log.i("Info","Failed to get order. Error: ${t.localizedMessage}")
             }
         })
     }

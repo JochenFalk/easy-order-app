@@ -2,7 +2,6 @@ package com.easysystems.easyorder.repositories
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.ActivityMainBinding
 import com.easysystems.easyorder.helpclasses.AppSettings
@@ -48,13 +47,7 @@ class SessionRepository {
 
             override fun onFailure(call: Call<SessionDTO>, t: Throwable) {
 
-                Toast.makeText(
-                    context,
-                    "Failed to get session!",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                Log.i("Info","Request failed with error: ${t.printStackTrace()} ${t.localizedMessage}")
+                Log.i("Info","Failed to get session. Error: ${t.localizedMessage}")
             }
         })
     }
@@ -89,13 +82,7 @@ class SessionRepository {
 
             override fun onFailure(call: Call<SessionDTO>, t: Throwable) {
 
-                Toast.makeText(
-                    context,
-                    "Failed to update session!",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                Log.i("Info","Request failed with error: ${t.printStackTrace()} ${t.localizedMessage}")
+                Log.i("Info","Failed to update session. Error: ${t.localizedMessage}")
             }
         })
     }
@@ -128,13 +115,7 @@ class SessionRepository {
 
             override fun onFailure(call: Call<SessionDTO>, t: Throwable) {
 
-                Toast.makeText(
-                    context,
-                    "Failed to get session!",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                Log.i("Info","Request failed with error: ${t.printStackTrace()} ${t.localizedMessage}")
+                Log.i("Info","Failed to verify session. Error: ${t.localizedMessage}")
             }
         })
     }

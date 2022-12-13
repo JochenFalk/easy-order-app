@@ -45,7 +45,7 @@ class ItemRepository {
 
             override fun onFailure(call: Call<List<ItemDTO>>, t: Throwable) {
 
-                Log.i("Info","Request failed with error: ${t.printStackTrace()} ${t.localizedMessage}")
+                Log.i("Info","Failed to retrieve list. Error: ${t.localizedMessage}")
             }
         })
     }

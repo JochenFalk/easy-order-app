@@ -67,13 +67,9 @@ class MolliePaymentRepository {
 
             override fun onFailure(call: Call<MolliePaymentDTO>, t: Throwable) {
 
-                Toast.makeText(
-                    context,
-                    "Failed to create payment!",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                Log.i("Info","Request failed with error: ${t.printStackTrace()} ${t.localizedMessage}")
+                Log.i(
+                    "Info","Failed to create payment. Error: ${t.localizedMessage}"
+                )
             }
         })
     }
@@ -119,13 +115,9 @@ class MolliePaymentRepository {
 
             override fun onFailure(call: Call<MolliePayment>, t: Throwable) {
 
-                Toast.makeText(
-                    context,
-                    "Failed to retrieve payment!",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                Log.i("Info","Request failed with error: ${t.printStackTrace()} ${t.localizedMessage}")
+                Log.i(
+                    "Info","Request failed with error: ${t.localizedMessage}"
+                )
             }
         })
     }
@@ -160,37 +152,38 @@ class MolliePaymentRepository {
                     }
                 } else {
                     Log.i(
-                        "Info","Failed to retrieve payment update for Mollie id: $mollieId. Bad response: $response"
+                        "Info",
+                        "Failed to retrieve payment update for Mollie id: $mollieId. Bad response: $response"
                     )
                 }
             }
 
             override fun onFailure(call: Call<MolliePayment>, t: Throwable) {
 
-                Toast.makeText(
-                    context,
-                    "Failed to retrieve payment update!",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                Log.i("Info","Request failed with error: ${t.printStackTrace()} ${t.localizedMessage}")
+                Log.i(
+                    "Info", "Failed to retrieve payment update. Error: ${t.localizedMessage}"
+                )
             }
         })
     }
 
     private fun generateRetrofitPayment(environment: String): RetrofitMolliePayment {
 
-        val baseUrl = if (environment == "backend") {
-            AppSettings.baseUrl
-        } else if (environment == "mollieAPI") {
-            AppSettings.mollieURLString
-        } else {
-            ""
+        val baseUrl = when (environment) {
+            "backend" -> {
+                AppSettings.baseUrl
+            }
+            "mollieAPI" -> {
+                AppSettings.mollieURLString
+            }
+            else -> {
+                ""
+            }
         }
 
-        val mapper = ObjectMapper().apply {
-            this.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        }
+        val mapper = ObjectMapper()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+
         val retrofit = Retrofit.Builder()
             .baseUrl(baseUrl)
             .addConverterFactory(JacksonConverterFactory.create(mapper))
@@ -217,6 +210,7 @@ class MolliePaymentRepository {
             this["currency"] = payment.amount.currency
             this["value"] = payment.amount.value
         }
+        val method = payment.method.toString()
         val checkoutUrl = payment.links?.checkout?.href
         val sessionId = session.id
 
@@ -228,6 +222,7 @@ class MolliePaymentRepository {
             payment.expiresAt,
             payment.id,
             payment.isCancelable,
+            method,
             payment.mode,
             payment.profileId,
             checkoutUrl,

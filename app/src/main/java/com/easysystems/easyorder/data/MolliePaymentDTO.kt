@@ -18,6 +18,8 @@ data class MolliePaymentDTO(
     val id: String? = null,
     @JsonProperty("isCancelable")
     val isCancelable: Boolean? = null,
+    @JsonProperty("method")
+    val method: String? = null,
     @JsonProperty("mode")
     val mode: String? = null,
     @JsonProperty("profileId")

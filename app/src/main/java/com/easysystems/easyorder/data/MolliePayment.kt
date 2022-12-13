@@ -1,12 +1,10 @@
 package com.easysystems.easyorder.data
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 // This class is derived from Mollie payment response body with jsonToKotlinClass plugin
 // -> https://plugins.jetbrains.com/plugin/9960-json-to-kotlin-class-jsontokotlinclass-/
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 data class MolliePayment(
     @JsonProperty("molliePaymentId")
     val molliePaymentId: Int? = 0,

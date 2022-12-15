@@ -19,6 +19,8 @@ class ScannerActivity : AppCompatActivity(), ZXingScannerView.ResultHandler {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        supportActionBar?.title = "Scan the table QR code"
+
         Log.i("Info","Scanning activity started")
 
         scannerView = ZXingScannerView(this)
@@ -78,10 +80,5 @@ class ScannerActivity : AppCompatActivity(), ZXingScannerView.ResultHandler {
         val intent = Intent(applicationContext, MainActivity::class.java)
         intent.putExtra(RESULT, result.toString())
         startActivity(intent)
-    }
-
-    override fun onBackPressed() {
-        super.onBackPressed()
-//        finish()
     }
 }

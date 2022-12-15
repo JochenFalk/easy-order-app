@@ -86,6 +86,7 @@ object SharedPreferencesHelper {
     }
 
     fun clearPreferences(activity: Activity, setName: String) {
+
         sharedPreferences =
             activity.getSharedPreferences(setName, Context.MODE_PRIVATE)
         val editor = sharedPreferences.edit()

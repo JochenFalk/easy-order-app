@@ -12,10 +12,11 @@ import com.easysystems.easyorder.R
 import com.easysystems.easyorder.data.ItemDTO
 import com.easysystems.easyorder.data.SessionDTO
 
-class ItemAdapter(var activity: MainActivity,
-                  var sessionDTO: SessionDTO,
-                  var itemDTOList: ArrayList<ItemDTO>
-                  ) : RecyclerView.Adapter<ItemAdapter.ItemListViewHolder>() {
+class ItemAdapter(
+    private var activity: MainActivity,
+    private var sessionDTO: SessionDTO,
+    private var itemDTOList: ArrayList<ItemDTO>
+) : RecyclerView.Adapter<ItemAdapter.ItemListViewHolder>() {
 
     inner class ItemListViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         var name: TextView = view.findViewById(R.id.cardViewName)
@@ -52,7 +53,7 @@ class ItemAdapter(var activity: MainActivity,
 
             activity.passSessionToActivity(sessionDTO)
 
-            Log.i("Info","Item added to order ${orders?.size}")
+            Log.i("Info", "Item added to order ${orders?.size}")
         }
     }
 

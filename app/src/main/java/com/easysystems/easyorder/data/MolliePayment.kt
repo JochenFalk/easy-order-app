@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 // -> https://plugins.jetbrains.com/plugin/9960-json-to-kotlin-class-jsontokotlinclass-/
 
 data class MolliePayment(
+    @JsonProperty("molliePaymentId")
+    val molliePaymentId: Int? = 0,
     @JsonProperty("amount")
     val amount: Amount,
     @JsonProperty("createdAt")
@@ -13,13 +15,13 @@ data class MolliePayment(
     @JsonProperty("description")
     val description: String,
     @JsonProperty("expiresAt")
-    val expiresAt: String,
+    val expiresAt: String?,
     @JsonProperty("id")
     val id: String,
     @JsonProperty("isCancelable")
     val isCancelable: Boolean,
     @JsonProperty("_links")
-    val links: Links,
+    val links: Links?,
     @JsonProperty("metadata")
     val metadata: Any?,
     @JsonProperty("method")
@@ -30,12 +32,16 @@ data class MolliePayment(
     val profileId: String,
     @JsonProperty("redirectUrl")
     val redirectUrl: String,
+    @JsonProperty("webhookUrl")
+    val webhookUrl: String,
     @JsonProperty("resource")
     val resource: String,
     @JsonProperty("sequenceType")
     val sequenceType: String,
     @JsonProperty("status")
-    val status: String
+    val status: String,
+    @JsonProperty("sessionId")
+    var sessionId: Int
 )
 
 data class Amount(
@@ -47,13 +53,13 @@ data class Amount(
 
 data class Links(
     @JsonProperty("checkout")
-    val checkout: Checkout,
+    val checkout: Checkout?,
     @JsonProperty("dashboard")
-    val dashboard: Dashboard,
+    val dashboard: Dashboard?,
     @JsonProperty("documentation")
-    val documentation: Documentation,
+    val documentation: Documentation?,
     @JsonProperty("self")
-    val self: Self
+    val self: Self?
 )
 
 data class Checkout(

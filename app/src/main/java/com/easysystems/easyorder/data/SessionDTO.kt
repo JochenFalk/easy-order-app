@@ -13,11 +13,14 @@ data class SessionDTO(
     @JsonProperty("total")
     var total: Double? = null,
     @JsonProperty("orders")
-    var orders: ArrayList<OrderDTO>? = null
+    var orders: ArrayList<OrderDTO>? = null,
+    @JsonProperty("payment")
+    var payment: MolliePaymentDTO? = null
 ) : Serializable {
     enum class Status {
         OPENED,
         CLOSED,
-        LOCKED
+        LOCKED,
+        CHANGED
     }
 }

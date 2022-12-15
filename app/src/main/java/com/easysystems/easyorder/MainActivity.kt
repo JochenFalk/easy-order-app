@@ -1,37 +1,34 @@
 package com.easysystems.easyorder
 
+import android.Manifest
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.net.wifi.SupplicantState
+import android.net.wifi.WifiInfo
+import android.net.wifi.WifiManager
 import android.os.Bundle
-import android.os.StrictMode
-import android.os.StrictMode.ThreadPolicy
 import android.util.Log
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
-import com.easysystems.easyorder.data.ItemDTO
-import com.easysystems.easyorder.data.MolliePayment
-import com.easysystems.easyorder.data.OrderDTO
-import com.easysystems.easyorder.data.SessionDTO
+import com.easysystems.easyorder.data.*
 import com.easysystems.easyorder.databinding.ActivityMainBinding
+import com.easysystems.easyorder.helpclasses.AppSettings
 import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
 import com.easysystems.easyorder.repositories.ItemRepository
+import com.easysystems.easyorder.repositories.MolliePaymentRepository
 import com.easysystems.easyorder.repositories.OrderRepository
 import com.easysystems.easyorder.repositories.SessionRepository
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.IOException
-import java.io.Serializable
-import java.net.URL
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
@@ -39,12 +36,14 @@ class MainActivity : AppCompatActivity() {
     private var itemRepository = ItemRepository()
     private var orderRepository = OrderRepository()
     private var sessionRepository = SessionRepository()
+    private var molliePaymentRepository = MolliePaymentRepository()
     private val sharedPreferencesHelper = SharedPreferencesHelper
 
     private lateinit var binding: ActivityMainBinding
 
     companion object {
         var sessionDTO = SessionDTO()
+        var paymentMethod = ""
         var menuItems = ArrayList<ItemDTO>()
         const val RESULT = "RESULT"
     }
@@ -59,6 +58,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        supportActionBar?.title = "Welcome"
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -68,32 +69,30 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnOrders.setOnClickListener {
-            callOrderListFragment(sessionDTO)
+            callOrderListFragment()
         }
 
         binding.btnCheckout.setOnClickListener {
-            callPaymentFragment(sessionDTO)
+            callPaymentFragment()
         }
 
         binding.btnCloseSession.setOnClickListener {
-            closeSession()
-        }
-
-        loadMenuItems()
-
-        val action: String? = intent?.action
-        if (action === Intent.ACTION_VIEW) {
-            val data: Uri? = intent?.data
-//            val paymentId: String? = data?.getQueryParameter("id")
-//            Optional: Do stuff with the payment ID
-
-            Log.i("Info", "${data.toString()}")
+            checkMolliePaymentStatus(sessionDTO, paymentMethod)
         }
     }
 
-    private fun getSession(id: Int) {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            android.R.id.home -> {
+                supportFragmentManager.popBackStack()
+                toggleElements(ElementState.MENU)
+                return true
+            }
+        }
+        return true
+    }
 
-        sharedPreferencesHelper.clearPreferences(this@MainActivity, "sessionData")
+    private fun getSession(id: Int) {
 
         sessionRepository.getSessionById(id, this@MainActivity, binding) { session ->
             if (session != null) {
@@ -113,7 +112,7 @@ class MainActivity : AppCompatActivity() {
         when (sessionDTO.status) {
 
             SessionDTO.Status.OPENED -> {
-                callItemListFragment(sessionDTO, menuItems)
+                callItemListFragment()
                 updateMainActivity()
                 Log.i("Info", "Session status is opened")
             }
@@ -123,14 +122,26 @@ class MainActivity : AppCompatActivity() {
                 Log.i("Info", "Session status is closed")
             }
             SessionDTO.Status.LOCKED -> {
-                Toast.makeText(
-                    this@MainActivity,
-                    "This session is locked because another person is performing a payment.",
-                    Toast.LENGTH_LONG
-                )
-                    .show()
-                Log.i("Info", "Session status is locked")
-                toggleElements(ElementState.WELCOME)
+
+                val savedStatus = sharedPreferencesHelper.retrievePreferences(this, "sessionData", "sessionStatus", "STRING")
+
+                if (savedStatus == "LOCKED") {
+                    resetPayment()
+                } else {
+
+                    Toast.makeText(
+                        this@MainActivity,
+                        "This session is locked because another person is performing a payment.",
+                        Toast.LENGTH_LONG
+                    )
+                        .show()
+                    Log.i("Info", "Session status is locked")
+                    toggleElements(ElementState.WELCOME)
+                }
+            }
+            SessionDTO.Status.CHANGED -> {
+                Log.i("Info", "Session status is changed")
+                verifyPayment()
             }
             else -> {
                 toggleElements(ElementState.WELCOME)
@@ -180,7 +191,7 @@ class MainActivity : AppCompatActivity() {
             if (it != null) {
                 sessionDTO = it
                 if (it.orders?.size == 0) {
-                    createNewOrder(it)
+                    createOrder(it)
                 } else {
                     loadSessionInfo()
                 }
@@ -188,58 +199,133 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun callItemListFragment(session: SessionDTO, itemList: ArrayList<ItemDTO>) {
-
-        val bundle = Bundle()
-        bundle.putSerializable("session", session as Serializable)
-        bundle.putSerializable("itemList", itemList as Serializable?)
+    private fun callItemListFragment() {
 
         val fragmentManager: FragmentManager = supportFragmentManager
         val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
         val itemListFragment = ItemListFragment(this@MainActivity)
 
-        itemListFragment.arguments = bundle
         fragmentTransaction.replace(R.id.frame, itemListFragment).addToBackStack(null)
         fragmentTransaction.commit()
 
         toggleElements(ElementState.MENU)
     }
 
-    private fun callOrderListFragment(sessionDTO: SessionDTO) {
-
-        val bundle = Bundle()
-        bundle.putSerializable("session", sessionDTO as Serializable)
+    private fun callOrderListFragment() {
 
         val fragmentManager: FragmentManager = supportFragmentManager
         val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
         val orderListFragment = OrderListFragment(this@MainActivity)
 
-        orderListFragment.arguments = bundle
         fragmentTransaction.replace(R.id.frame, orderListFragment).addToBackStack(null)
         fragmentTransaction.commit()
 
         toggleElements(ElementState.ORDERS)
     }
 
-    private fun callPaymentFragment(sessionDTO: SessionDTO) {
+    private fun callPaymentFragment() {
 
-        Companion.sessionDTO.status = SessionDTO.Status.LOCKED
-        Companion.sessionDTO.orders?.last()?.status = OrderDTO.Status.SENT
+        sessionDTO.status = SessionDTO.Status.LOCKED
+        sessionDTO.orders?.last()?.status = OrderDTO.Status.SENT
 
         updateSession(sessionDTO) {
-
-            val bundle = Bundle()
-            bundle.putSerializable("session", sessionDTO as Serializable)
 
             val fragmentManager: FragmentManager = supportFragmentManager
             val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
             val paymentFragment = PaymentFragment(this@MainActivity)
 
-            paymentFragment.arguments = bundle
             fragmentTransaction.replace(R.id.frame, paymentFragment).addToBackStack(null)
             fragmentTransaction.commit()
 
             toggleElements(ElementState.PAYMENT)
+        }
+    }
+
+    private fun verifyPayment() {
+
+        sessionDTO.payment?.id?.let { it ->
+            molliePaymentRepository.retrievePaymentUpdateById(
+                it,
+                this@MainActivity,
+                binding
+            ) { molliePayment ->
+                if (molliePayment != null) {
+
+                    sessionDTO.payment = molliePaymentRepository.convertPaymentToPaymentDTO(
+                        sessionDTO,
+                        molliePayment
+                    )
+
+                    updateSession(sessionDTO) {
+                        if (it != null) {
+                            when (it.payment?.status?.uppercase()) {
+                                "PAID" -> {
+
+                                    Log.i("Info", "Payment status is paid")
+                                    closeSession()
+                                }
+                                "EXPIRED" -> {
+
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "Payment was expired. Please try again.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                    Log.i("Info", "Payment status is expired")
+                                    resetPayment()
+                                }
+                                "FAILED" -> {
+
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "Payment failed :( Please try again.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                    Log.i("Info", "Payment status is failed")
+                                    resetPayment()
+                                }
+                                "CANCELED" -> {
+
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "Payment was canceled. Please try another payment method.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                    Log.i("Info", "Payment status is canceled")
+                                    resetPayment()
+                                }
+                            }
+                        } else {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Something unexpected happened while checking your payment. " +
+                                        " Please try again",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            Log.i("Info", "Something unexpected happened while saving the payment")
+                            resetPayment()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun resetPayment() {
+
+        if (sessionDTO.status != SessionDTO.Status.CLOSED) {
+
+            sessionDTO.status = SessionDTO.Status.OPENED
+            sessionDTO.orders?.last()?.status = OrderDTO.Status.OPENED
+
+            updateSession(sessionDTO) {
+                updateMainActivity()
+                callItemListFragment()
+            }
         }
     }
 
@@ -259,18 +345,63 @@ class MainActivity : AppCompatActivity() {
                 popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
             }
 
+            sessionDTO = SessionDTO()
             sharedPreferencesHelper.clearPreferences(this, "sessionData")
 
             Toast.makeText(
                 this@MainActivity, "Payment received :). Thank you for using EasyOrder services.",
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_LONG
             ).show()
 
             toggleElements(ElementState.WELCOME)
         }
+    }
 
-        Log.i("Info", "Add stuff to complete payment")
-        createMolliePayment(sessionDTO)
+    private fun checkWifiConnection() {
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1
+            )
+        } else {
+
+            val wifiManager =
+                applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            val wifiInfo: WifiInfo = wifiManager.connectionInfo
+
+            if (wifiInfo.supplicantState == SupplicantState.COMPLETED) {
+                val ssid = wifiInfo.ssid.toString().substring(1, wifiInfo.ssid.length - 1)
+                AppSettings.setAppConfiguration(ssid)
+                loadMenuItems()
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == 1 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            checkWifiConnection()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        updateSession(sessionDTO) {
+            if (it != null) {
+                sharedPreferencesHelper
+                    .savePreferences(this, "sessionData", "sessionId", intValue = it.id)
+                sharedPreferencesHelper
+                    .savePreferences(this, "sessionData", "sessionStatus", stringValue = it.status.toString())
+            }
+        }
     }
 
     override fun onResume() {
@@ -284,33 +415,24 @@ class MainActivity : AppCompatActivity() {
                     getSession(it)
                 }
             }
-    }
 
-    override fun onPause() {
-        super.onPause()
-
-        updateSession(sessionDTO) {
-            if (it != null) {
-                sharedPreferencesHelper
-                    .savePreferences(this, "sessionData", "sessionId", intValue = it.id)
-            }
-        }
+        checkWifiConnection()
     }
 
     fun updateMainActivity() {
 
-        val decimal: NumberFormat = DecimalFormat("00.00")
+        val decimal: NumberFormat = DecimalFormat("0.00")
         val session = sessionDTO
         val sessionTotal = session.total
         val order = sessionDTO.orders?.last()
         val count = order?.items?.size
 
         val orderBtnText =
-            "View and send orders (Total: € ${decimal.format(sessionTotal)})"
+            "${resources.getString(R.string.btnOrders)} (Total: € ${decimal.format(sessionTotal)})"
         val checkoutBtnText =
-            "Select payment options (Total: € ${decimal.format(sessionTotal)})"
+            "${resources.getString(R.string.btnCheckout)} (Total: € ${decimal.format(sessionTotal)})"
         val closeSessionBtnText =
-            "Click to pay (Total € ${decimal.format(sessionTotal)})"
+            "${resources.getString(R.string.btnCloseSession)} (Total € ${decimal.format(sessionTotal)})"
 
         binding.iconOrdersBadge.text = count.toString()
         binding.btnOrders.text = orderBtnText
@@ -337,7 +459,7 @@ class MainActivity : AppCompatActivity() {
         updateMainActivity()
     }
 
-    fun createNewOrder(sessionDTO: SessionDTO) {
+    fun createOrder(sessionDTO: SessionDTO) {
         sessionDTO.id?.let { sessionId ->
             val orders = sessionDTO.orders
             if (orders != null) {
@@ -353,6 +475,114 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkMolliePaymentStatus(sessionDTO: SessionDTO, paymentMethod: String) {
+
+        val methodArray = this@MainActivity.resources?.getStringArray(R.array.payment_methods)
+
+        if (methodArray != null) {
+
+            if (paymentMethod != methodArray[0]) {
+                if (sessionDTO.payment != null) {
+                    if (sessionDTO.payment?.method != MainActivity.paymentMethod) {
+                        createMolliePayment(sessionDTO, MainActivity.paymentMethod)
+                    } else {
+                        when (sessionDTO.payment?.status?.uppercase()) {
+                            "OPEN" -> openMollieCheckout(sessionDTO.payment!!)
+                            "CANCELED" -> {
+                                createMolliePayment(sessionDTO, paymentMethod)
+                            }
+                            "PENDING" -> {}
+                            "AUTHORIZED" -> {}
+                            "EXPIRED" -> {
+                                createMolliePayment(sessionDTO, paymentMethod)
+                            }
+                            "FAILED" -> {}
+                            "PAID" -> {}
+                        }
+                    }
+                } else {
+                    createMolliePayment(sessionDTO, paymentMethod)
+                }
+            } else {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Please choose a payment method.",
+                    Toast.LENGTH_SHORT
+                )
+                    .show()
+            }
+        }
+    }
+
+    private fun createMolliePayment(sessionDTO: SessionDTO, paymentMethod: String) {
+
+        val ngRokBaseURL = AppSettings.ngRokBaseURL
+        val mollieRedirectUrl = AppSettings.mollieRedirectUrl
+        val mollieWebhookMapping = AppSettings.mollieWebhookMapping
+        val decimal: NumberFormat = DecimalFormat("0.00")
+        val amount = decimal.format(sessionDTO.total).replace(',', '.')
+
+        val jsonString = "{\n" +
+                "   \"description\": \"Session #${sessionDTO.id.toString()}\",\n" +
+                "   \"redirectUrl\": \"$mollieRedirectUrl\",\n" +
+                "   \"webhookUrl\": \"$ngRokBaseURL$mollieWebhookMapping\",\n" +
+                "   \"method\": \"$paymentMethod\",\n" +
+                "   \"amount\": \n" +
+                "  {\n" +
+                "    \"currency\": \"EUR\",\n" +
+                "    \"value\": \"$amount\"\n" +
+                "  }\n" +
+                "}"
+
+        sessionDTO.id?.let { sessionId ->
+
+            if (amount != "0.00") {
+                molliePaymentRepository.retrievePayment(
+                    jsonString,
+                    sessionId,
+                    this@MainActivity,
+                    binding
+                ) { paymentFromMollie ->
+
+                    if (paymentFromMollie != null) {
+                        paymentFromMollie.sessionId = sessionId
+                        molliePaymentRepository.createPayment(
+                            sessionDTO,
+                            paymentFromMollie,
+                            this@MainActivity,
+                            binding
+                        ) { paymentFromBackend ->
+                            sessionDTO.status = SessionDTO.Status.CHANGED
+                            sessionDTO.payment = paymentFromBackend
+
+                            updateSession(sessionDTO) {
+
+                                if (it != null) {
+                                    it.payment?.let { payment -> openMollieCheckout(payment) }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+
+                Toast.makeText(
+                    this@MainActivity,
+                    "Please add something to your order before starting a payment ;)",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun openMollieCheckout(payment: MolliePaymentDTO) {
+        payment.checkoutUrl?.let {
+            val browserIntent = Intent(Intent.ACTION_VIEW)
+            browserIntent.data = Uri.parse(it)
+            startActivity(browserIntent)
+        }
+    }
+
     fun toggleElements(state: ElementState) {
 
         elementState = state
@@ -360,6 +590,7 @@ class MainActivity : AppCompatActivity() {
         when (state) {
 
             ElementState.WELCOME -> {
+                supportActionBar?.title = "Welcome"
                 binding.btnOrders.isVisible = false
                 binding.iconOrders.isVisible = false
                 binding.iconOrdersBadge.isVisible = false
@@ -374,6 +605,7 @@ class MainActivity : AppCompatActivity() {
                 binding.frame.setBackgroundResource(R.drawable.welcome)
             }
             ElementState.MENU -> {
+                supportActionBar?.title = "Menu"
                 binding.btnOrders.isVisible = true
                 binding.iconOrders.isVisible = true
                 binding.iconOrdersBadge.isVisible = true
@@ -388,6 +620,7 @@ class MainActivity : AppCompatActivity() {
                 binding.frame.setBackgroundResource(0)
             }
             ElementState.ORDERS -> {
+                supportActionBar?.title = "Orders"
                 binding.btnOrders.isVisible = false
                 binding.iconOrders.isVisible = false
                 binding.iconOrdersBadge.isVisible = false
@@ -397,97 +630,12 @@ class MainActivity : AppCompatActivity() {
                 binding.iconCloseSession.isVisible = false
             }
             ElementState.PAYMENT -> {
+                supportActionBar?.title = "Payment"
                 binding.btnCheckout.isVisible = false
                 binding.iconCheckout.isVisible = false
                 binding.btnCloseSession.isVisible = true
                 binding.iconCloseSession.isVisible = true
             }
-        }
-    }
-
-    private val CONNECT_TIMEOUT = 15L
-    private val READ_TIMEOUT = 15L
-    private val WRITE_TIMEOUT = 15L
-
-    private fun createMolliePayment(sessionDTO: SessionDTO) {
-
-        val policy = ThreadPolicy.Builder().permitAll().build()
-        StrictMode.setThreadPolicy(policy)
-
-        val decimal: NumberFormat = DecimalFormat("0.00")
-        val amount = decimal.format(sessionDTO.total).replace(',', '.')
-        val urlString = "https://api.mollie.com/v2/payments"
-        val jsonString = "{\n" +
-                "    \"description\": \"Session #${sessionDTO.id.toString()} \",\n" +
-                "    \"redirectUrl\": \"mollie-app://payment-return\",\n" +
-                "    \"amount\": \n" +
-                "    {\n" +
-                "      \"currency\": \"EUR\",\n" +
-                "      \"value\": \"$amount\"\n" +
-                "    }\n" +
-                "}"
-        val token = "Bearer test_yGsWtqGQQuKvNs4qtDEtsusscVdDAU"
-
-        val client = OkHttpClient.Builder()
-            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-            .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
-            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-            .build()
-
-        val body =
-            jsonString.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
-
-        val request = Request.Builder()
-            .url(URL(urlString))
-            .header("Authorization", token)
-            .post(body)
-            .build()
-
-        try {
-            val response = client.newCall(request).execute()
-            if (response.isSuccessful) {
-
-                val mapper = jacksonObjectMapper()
-                val responseJSON = response.body?.string()
-                val molliePayment = mapper.readValue(responseJSON, MolliePayment::class.java)
-
-                Log.i("Info", "Payment created: $molliePayment")
-
-                val browserIntent = Intent(Intent.ACTION_VIEW)
-                browserIntent.data = Uri.parse(molliePayment.links.checkout.href)
-                startActivity(browserIntent)
-
-                Log.i("Info", "Redirecting to Mollie checkout")
-
-            } else {
-                Log.i("Info", "Payment creation failed")
-            }
-        } catch (e: IOException) {
-            e.printStackTrace()
-            Log.i("Info", "Payment creation failed: $e")
-        }
-    }
-
-    private fun performGetOperation(urlString: String, token: String): String? {
-        return try {
-            val client = OkHttpClient.Builder()
-                .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-                .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
-                .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-                .build()
-
-            val request = Request.Builder()
-                .url(URL(urlString))
-                .header("Authorization", token)
-                .get()
-                .build()
-
-            val response = client.newCall(request).execute()
-            response.body?.string()
-        } catch (e: IOException) {
-            e.printStackTrace()
-            Log.i("Info", "Request to mollie failed: $e")
-            null
         }
     }
 }

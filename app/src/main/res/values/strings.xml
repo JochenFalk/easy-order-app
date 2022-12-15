@@ -1,9 +1,9 @@
 <resources>
     <string name="app_name">EasyOrder</string>
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="btnOrders">View and send your order (€ 0,0)</string>
     <string name="btnScan">Scan the code to join the table</string>
-    <string name="btnCheckout">Click to pay</string>
+    <string name="btnOrders">Manage your orders</string>
+    <string name="btnCheckout">Go to checkout</string>
+    <string name="btnCloseSession">Click here to pay</string>
     <string-array name="payment_methods">
         <item>Select payment option</item>
         <item>Ideal</item>

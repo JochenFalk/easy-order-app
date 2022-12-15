@@ -36,7 +36,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
             </intent-filter>
         </activity>
-        <activity android:name=".ScannerActivity"
+        <activity
+            android:name=".ScannerActivity"
             android:exported="true"
             android:parentActivityName=".MainActivity">
         </activity>

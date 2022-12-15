@@ -2,15 +2,12 @@ package com.easysystems.easyorder
 
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import com.easysystems.easyorder.adapters.CustomExpandableListAdapter
 import com.easysystems.easyorder.data.OrderDTO
-import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.FragmentOrdersBinding
 
 class OrderListFragment(private val activity: MainActivity) : Fragment() {
@@ -137,5 +134,15 @@ class OrderListFragment(private val activity: MainActivity) : Fragment() {
         listView!!.setAdapter(listAdapter)
 
         return binding.root
+    }
+
+    override fun onPause() {
+        super.onPause()
+        activity.supportActionBar?.setDisplayHomeAsUpEnabled(false)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        activity.supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 }

@@ -1,7 +1,6 @@
 package com.easysystems.easyorder.helpclasses
 
 import android.util.Log
-import com.easysystems.easyorder.MainActivity
 
 object AppSettings {
 
@@ -9,7 +8,7 @@ object AppSettings {
     const val defaultBaseURL = "http://$defaultIpAddress:8080/v1/"
 
     private const val ngRokIpAddress =
-        "https://7760-83-232-94-162.eu.ngrok.io"
+        "https://afc9-2001-1c05-2208-c300-d822-ad4f-1841-ae6.eu.ngrok.io"
     const val ngRokBaseURL = "$ngRokIpAddress/v1/"
 
     const val mollieURLString = "https://api.mollie.com/v2/"

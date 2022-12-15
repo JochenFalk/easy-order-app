@@ -10,6 +10,7 @@ import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.util.Log
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -57,6 +58,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        supportActionBar?.title = "Welcome"
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -66,11 +69,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnOrders.setOnClickListener {
-            callOrderListFragment(sessionDTO)
+            callOrderListFragment()
         }
 
         binding.btnCheckout.setOnClickListener {
-            callPaymentFragment(sessionDTO)
+            callPaymentFragment()
         }
 
         binding.btnCloseSession.setOnClickListener {
@@ -78,9 +81,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getSession(id: Int) {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            android.R.id.home -> {
+                supportFragmentManager.popBackStack()
+                toggleElements(ElementState.MENU)
+                return true
+            }
+        }
+        return true
+    }
 
-//        sharedPreferencesHelper.clearPreferences(this@MainActivity, "sessionData")
+    private fun getSession(id: Int) {
 
         sessionRepository.getSessionById(id, this@MainActivity, binding) { session ->
             if (session != null) {
@@ -100,7 +112,7 @@ class MainActivity : AppCompatActivity() {
         when (sessionDTO.status) {
 
             SessionDTO.Status.OPENED -> {
-                callItemListFragment(sessionDTO, menuItems)
+                callItemListFragment()
                 updateMainActivity()
                 Log.i("Info", "Session status is opened")
             }
@@ -187,7 +199,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun callItemListFragment(session: SessionDTO, itemList: ArrayList<ItemDTO>) {
+    private fun callItemListFragment() {
 
         val fragmentManager: FragmentManager = supportFragmentManager
         val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
@@ -199,7 +211,7 @@ class MainActivity : AppCompatActivity() {
         toggleElements(ElementState.MENU)
     }
 
-    private fun callOrderListFragment(sessionDTO: SessionDTO) {
+    private fun callOrderListFragment() {
 
         val fragmentManager: FragmentManager = supportFragmentManager
         val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
@@ -211,7 +223,7 @@ class MainActivity : AppCompatActivity() {
         toggleElements(ElementState.ORDERS)
     }
 
-    private fun callPaymentFragment(sessionDTO: SessionDTO) {
+    private fun callPaymentFragment() {
 
         sessionDTO.status = SessionDTO.Status.LOCKED
         sessionDTO.orders?.last()?.status = OrderDTO.Status.SENT
@@ -312,7 +324,7 @@ class MainActivity : AppCompatActivity() {
 
             updateSession(sessionDTO) {
                 updateMainActivity()
-                callItemListFragment(sessionDTO, menuItems)
+                callItemListFragment()
             }
         }
     }
@@ -416,11 +428,11 @@ class MainActivity : AppCompatActivity() {
         val count = order?.items?.size
 
         val orderBtnText =
-            "View and send orders (Total: € ${decimal.format(sessionTotal)})"
+            "${resources.getString(R.string.btnOrders)} (Total: € ${decimal.format(sessionTotal)})"
         val checkoutBtnText =
-            "Select payment options (Total: € ${decimal.format(sessionTotal)})"
+            "${resources.getString(R.string.btnCheckout)} (Total: € ${decimal.format(sessionTotal)})"
         val closeSessionBtnText =
-            "Click to pay (Total € ${decimal.format(sessionTotal)})"
+            "${resources.getString(R.string.btnCloseSession)} (Total € ${decimal.format(sessionTotal)})"
 
         binding.iconOrdersBadge.text = count.toString()
         binding.btnOrders.text = orderBtnText
@@ -578,6 +590,7 @@ class MainActivity : AppCompatActivity() {
         when (state) {
 
             ElementState.WELCOME -> {
+                supportActionBar?.title = "Welcome"
                 binding.btnOrders.isVisible = false
                 binding.iconOrders.isVisible = false
                 binding.iconOrdersBadge.isVisible = false
@@ -592,6 +605,7 @@ class MainActivity : AppCompatActivity() {
                 binding.frame.setBackgroundResource(R.drawable.welcome)
             }
             ElementState.MENU -> {
+                supportActionBar?.title = "Menu"
                 binding.btnOrders.isVisible = true
                 binding.iconOrders.isVisible = true
                 binding.iconOrdersBadge.isVisible = true
@@ -606,6 +620,7 @@ class MainActivity : AppCompatActivity() {
                 binding.frame.setBackgroundResource(0)
             }
             ElementState.ORDERS -> {
+                supportActionBar?.title = "Orders"
                 binding.btnOrders.isVisible = false
                 binding.iconOrders.isVisible = false
                 binding.iconOrdersBadge.isVisible = false
@@ -615,6 +630,7 @@ class MainActivity : AppCompatActivity() {
                 binding.iconCloseSession.isVisible = false
             }
             ElementState.PAYMENT -> {
+                supportActionBar?.title = "Payment"
                 binding.btnCheckout.isVisible = false
                 binding.iconCheckout.isVisible = false
                 binding.btnCloseSession.isVisible = true

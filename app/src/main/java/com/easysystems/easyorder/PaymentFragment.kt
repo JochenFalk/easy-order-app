@@ -1,11 +1,13 @@
 package com.easysystems.easyorder
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.ExpandableListAdapter
+import android.widget.ExpandableListView
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import com.easysystems.easyorder.adapters.CustomExpandableListAdapter
@@ -24,6 +26,7 @@ class PaymentFragment(private val activity: MainActivity) : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         activity.onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 resetPayment()
@@ -99,11 +102,6 @@ class PaymentFragment(private val activity: MainActivity) : Fragment() {
         return binding.root
     }
 
-    override fun onPause() {
-        super.onPause()
-        resetPayment()
-    }
-
     private fun resetPayment() {
 
         val sessionDTO = MainActivity.sessionDTO
@@ -114,8 +112,20 @@ class PaymentFragment(private val activity: MainActivity) : Fragment() {
             sessionDTO.orders?.last()?.status = OrderDTO.Status.OPENED
 
             activity.updateSession(sessionDTO) {}
-            activity.toggleElements(MainActivity.ElementState.MENU)
-            activity.supportFragmentManager.popBackStack()
         }
+
+        activity.supportFragmentManager.popBackStack()
+        activity.toggleElements(MainActivity.ElementState.MENU)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        activity.supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        resetPayment()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        activity.supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 }

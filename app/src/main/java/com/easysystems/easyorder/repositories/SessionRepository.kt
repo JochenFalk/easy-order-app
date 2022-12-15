@@ -5,18 +5,15 @@ import android.util.Log
 import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.ActivityMainBinding
 import com.easysystems.easyorder.helpclasses.AppSettings
-import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
 import com.easysystems.easyorder.retrofit.RetrofitSession
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.jackson.JacksonConverterFactory
-import java.lang.Exception
 
 class SessionRepository {
 
-    private val sharedPreferencesHelper = SharedPreferencesHelper
     lateinit var sessionDTO: SessionDTO
 
     fun getSessionById(id: Int, context: Context, binding: ActivityMainBinding, callback:(SessionDTO?)->Unit) {

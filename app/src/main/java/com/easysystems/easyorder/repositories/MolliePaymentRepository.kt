@@ -2,7 +2,6 @@ package com.easysystems.easyorder.repositories
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import com.easysystems.easyorder.data.MolliePayment
 import com.easysystems.easyorder.data.MolliePaymentDTO
 import com.easysystems.easyorder.data.SessionDTO
@@ -18,7 +17,6 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.jackson.JacksonConverterFactory
-import java.lang.Exception
 
 class MolliePaymentRepository {
 

@@ -1,24 +1,19 @@
 package com.easysystems.easyorder.repositories
 
-import android.content.Context
 import android.util.Log
 import com.easysystems.easyorder.data.SessionDTO
-import com.easysystems.easyorder.databinding.ActivityMainBinding
-import com.easysystems.easyorder.helpclasses.AppSettings
 import com.easysystems.easyorder.retrofit.RetrofitSession
+import org.koin.java.KoinJavaComponent.inject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.jackson.JacksonConverterFactory
 
 class SessionRepository {
 
-    lateinit var sessionDTO: SessionDTO
+    private val retrofitSession : RetrofitSession by inject(RetrofitSession::class.java)
 
-    fun getSessionById(id: Int, context: Context, binding: ActivityMainBinding, callback:(SessionDTO?)->Unit) {
+    fun getSessionById(id: Int, callback:(SessionDTO?)->Unit) {
 
-        val retrofitSession = generateRetrofitSession()
         val call: Call<SessionDTO> = retrofitSession.retrieveSessionById(id)
 
         call.enqueue(object : Callback<SessionDTO> {
@@ -28,13 +23,12 @@ class SessionRepository {
 
                     try {
 
-                        sessionDTO = response.body() as SessionDTO
+                        val sessionDTO = response.body() as SessionDTO
                         callback(sessionDTO)
 
                         Log.i("Info","Retrieved session successfully: $sessionDTO")
 
                     } catch (ex: Exception) {
-
                         Log.i("Info","Session not found: $ex")
                     }
                 } else {
@@ -43,50 +37,42 @@ class SessionRepository {
             }
 
             override fun onFailure(call: Call<SessionDTO>, t: Throwable) {
-
                 Log.i("Info","Failed to get session. Error: ${t.localizedMessage}")
             }
         })
     }
 
-    fun updateSession(id: Int, sessionDTO: SessionDTO, context: Context, binding: ActivityMainBinding, callback:(SessionDTO?)->Unit) {
+    fun updateSession(sessionToUpdate: SessionDTO, callback: (SessionDTO?) -> Unit) {
 
-        var updatedSession = sessionDTO
+        sessionToUpdate.id?.let { retrofitSession.updateSession(it, sessionToUpdate) }
+            ?.enqueue(object : Callback<SessionDTO> {
+                override fun onResponse(call: Call<SessionDTO>, response: Response<SessionDTO>) {
 
-        val retrofitSession = generateRetrofitSession()
-        val call: Call<SessionDTO> = retrofitSession.updateSession(id, updatedSession)
+                    if (response.isSuccessful) {
 
-        call.enqueue(object : Callback<SessionDTO> {
-            override fun onResponse(call: Call<SessionDTO>, response: Response<SessionDTO>) {
+                        try {
 
-                if (response.isSuccessful) {
+                            val sessionDTO = response.body() as SessionDTO
+                            callback(sessionDTO)
 
-                    try {
+                            Log.i("Info", "Session updated successfully: $sessionDTO")
 
-                        updatedSession = response.body() as SessionDTO
-                        callback(updatedSession)
-
-                        Log.i("Info","Session updated successfully: $updatedSession")
-
-                    } catch (ex: Exception) {
-
-                        Log.i("Info","Session not found: $ex")
+                        } catch (ex: Exception) {
+                            Log.i("Info", "Session not found: $ex")
+                        }
+                    } else {
+                        Log.i("Info", "Failed to update session for id: $sessionToUpdate.id / $sessionToUpdate")
                     }
-                } else {
-                    Log.i("Info","Failed to update session for id: $id / $sessionDTO")
                 }
-            }
 
-            override fun onFailure(call: Call<SessionDTO>, t: Throwable) {
-
-                Log.i("Info","Failed to update session. Error: ${t.localizedMessage}")
-            }
-        })
+                override fun onFailure(call: Call<SessionDTO>, t: Throwable) {
+                    Log.i("Info", "Failed to update session. Error: ${t.localizedMessage}")
+                }
+            })
     }
 
-    fun verifyTabletop(tabletopId: Int, authCode: String, context: Context, binding: ActivityMainBinding, callback: (SessionDTO?)->Unit) {
+    fun verifyTabletop(tabletopId: Int, authCode: String, callback: (SessionDTO?)->Unit) {
 
-        val retrofitSession = generateRetrofitSession()
         val call: Call<SessionDTO> = retrofitSession.verifyAndRetrieveSessionByTabletop(tabletopId, authCode)
 
         call.enqueue(object : Callback<SessionDTO> {
@@ -96,13 +82,12 @@ class SessionRepository {
 
                     try {
 
-                        sessionDTO = response.body() as SessionDTO
+                        val sessionDTO = response.body() as SessionDTO
                         callback(sessionDTO)
 
                         Log.i("Info","Retrieved session successfully: $sessionDTO")
 
                     } catch (ex: Exception) {
-
                         Log.i("Info","Session not found: $ex")
                     }
                 } else {
@@ -111,19 +96,8 @@ class SessionRepository {
             }
 
             override fun onFailure(call: Call<SessionDTO>, t: Throwable) {
-
                 Log.i("Info","Failed to verify session. Error: ${t.localizedMessage}")
             }
         })
-    }
-
-    private fun generateRetrofitSession(): RetrofitSession {
-
-        val retrofit = Retrofit.Builder()
-            .baseUrl(AppSettings.baseUrl)
-            .addConverterFactory(JacksonConverterFactory.create())
-            .build()
-
-        return retrofit.create(RetrofitSession::class.java)
     }
 }

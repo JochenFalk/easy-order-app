@@ -42,7 +42,37 @@ data class MolliePayment(
     val status: String,
     @JsonProperty("sessionId")
     var sessionId: Int
-)
+) {
+
+    fun convertPaymentToPaymentDTO(): MolliePaymentDTO {
+
+        val payment = this
+        val amount = HashMap<String, String>().apply {
+            this["currency"] = payment.amount.currency
+            this["value"] = payment.amount.value
+        }
+
+        return MolliePaymentDTO(
+            molliePaymentId = payment.molliePaymentId,
+            amount = amount,
+            createdAt = payment.createdAt,
+            description = payment.description,
+            expiresAt = payment.expiresAt,
+            id = payment.id,
+            isCancelable = payment.isCancelable,
+            method = payment.method.toString(),
+            mode = payment.mode,
+            profileId = payment.profileId,
+            checkoutUrl = payment.links?.checkout?.href,
+            redirectUrl = payment.redirectUrl,
+            webhookUrl = payment.webhookUrl,
+            resource = payment.resource,
+            sequenceType = payment.sequenceType,
+            status = payment.status,
+            sessionId = payment.sessionId
+        )
+    }
+}
 
 data class Amount(
     @JsonProperty("currency")

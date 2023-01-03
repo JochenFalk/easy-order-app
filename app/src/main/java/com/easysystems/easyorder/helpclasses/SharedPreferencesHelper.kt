@@ -35,7 +35,6 @@ object SharedPreferencesHelper {
         }
 
         editor.apply()
-
         Log.i("Info","Preference $key is saved with set name: $setName")
     }
 

@@ -1,40 +1,39 @@
 package com.easysystems.easyorder.repositories
 
-import android.content.Context
 import android.util.Log
 import com.easysystems.easyorder.data.MolliePayment
 import com.easysystems.easyorder.data.MolliePaymentDTO
 import com.easysystems.easyorder.data.SessionDTO
-import com.easysystems.easyorder.databinding.ActivityMainBinding
 import com.easysystems.easyorder.helpclasses.AppSettings
+import com.easysystems.easyorder.retrofit.RetrofitBackendPayment
 import com.easysystems.easyorder.retrofit.RetrofitMolliePayment
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.koin.core.qualifier.named
+import org.koin.java.KoinJavaComponent
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.jackson.JacksonConverterFactory
 
-class MolliePaymentRepository {
+class PaymentRepository {
 
-    lateinit var payment: MolliePayment
-    lateinit var paymentDTO: MolliePaymentDTO
+    private val retrofitBackendPayment: RetrofitBackendPayment by KoinJavaComponent.inject(
+        RetrofitBackendPayment::class.java,
+        named("backend")
+    )
+    private val retrofitMolliePayment: RetrofitMolliePayment by KoinJavaComponent.inject(
+        RetrofitMolliePayment::class.java,
+        named("mollie")
+    )
 
-    fun createPayment(
+    fun createPaymentOnBackend(
         session: SessionDTO,
-        molliePayment: MolliePayment,
-        context: Context,
-        binding: ActivityMainBinding,
+        molliePaymentDTO: MolliePaymentDTO,
         callback: (MolliePaymentDTO?) -> Unit
     ) {
 
-        paymentDTO = convertPaymentToPaymentDTO(session, molliePayment)
-
-        val retrofitPayment = generateRetrofitPayment("backend")
-        val call: Call<MolliePaymentDTO> = retrofitPayment.createPayment(paymentDTO)
+        val call: Call<MolliePaymentDTO> =
+            retrofitBackendPayment.createPaymentOnBackend(molliePaymentDTO)
 
         call.enqueue(object : Callback<MolliePaymentDTO> {
             override fun onResponse(
@@ -46,13 +45,12 @@ class MolliePaymentRepository {
 
                     try {
 
-                        paymentDTO = response.body() as MolliePaymentDTO
+                        val paymentDTO = response.body() as MolliePaymentDTO
                         callback(paymentDTO)
 
                         Log.i("Info", "Payment created successfully on backend: $paymentDTO")
 
                     } catch (ex: Exception) {
-
                         Log.i("Info", "Failed to create payment: $ex")
                     }
                 } else {
@@ -64,28 +62,68 @@ class MolliePaymentRepository {
             }
 
             override fun onFailure(call: Call<MolliePaymentDTO>, t: Throwable) {
-
                 Log.i(
-                    "Info","Failed to create payment. Error: ${t.localizedMessage}"
+                    "Info", "Failed to create payment. Error: ${t.localizedMessage}"
                 )
             }
         })
     }
 
-    fun retrievePayment(
+    fun updatePaymentToBackend(
+        molliePaymentDTO: MolliePaymentDTO,
+        callback: (MolliePaymentDTO?) -> Unit
+    ) {
+
+        molliePaymentDTO.molliePaymentId?.let {
+            retrofitBackendPayment.updatePaymentToBackend(
+                it,
+                molliePaymentDTO
+            )
+        }
+            ?.enqueue(object : Callback<MolliePaymentDTO> {
+                override fun onResponse(
+                    call: Call<MolliePaymentDTO>,
+                    response: Response<MolliePaymentDTO>
+                ) {
+
+                    if (response.isSuccessful) {
+
+                        try {
+
+                            val paymentDTO = response.body() as MolliePaymentDTO
+                            callback(paymentDTO)
+
+                            Log.i("Info", "Mollie payment updated successfully: $paymentDTO")
+
+                        } catch (ex: Exception) {
+
+                            Log.i("Info", "Mollie payment not found: $ex")
+                        }
+                    } else {
+                        Log.i(
+                            "Info",
+                            "Failed to update Mollie payment for id: ${molliePaymentDTO.molliePaymentId} / $response"
+                        )
+                    }
+                }
+
+                override fun onFailure(call: Call<MolliePaymentDTO>, t: Throwable) {
+                    Log.i("Info", "Failed to update Mollie payment. Error: ${t.localizedMessage}")
+                }
+            })
+    }
+
+    fun retrievePaymentFromMollie(
         jsonString: String,
         sessionId: Int,
-        context: Context,
-        binding: ActivityMainBinding,
         callback: (MolliePayment?) -> Unit
     ) {
 
-        val retrofitPayment = generateRetrofitPayment("mollieAPI")
         val body = jsonString.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
         val mollieHeader = getHeaderMap()
 
         val call: Call<MolliePayment> =
-            retrofitPayment.retrievePaymentFromMollie(mollieHeader, body)
+            retrofitMolliePayment.retrievePaymentFromMollie(mollieHeader, body)
 
         call.enqueue(object : Callback<MolliePayment> {
             override fun onResponse(call: Call<MolliePayment>, response: Response<MolliePayment>) {
@@ -94,13 +132,12 @@ class MolliePaymentRepository {
 
                     try {
 
-                        payment = response.body() as MolliePayment
+                        val payment = response.body() as MolliePayment
                         callback(payment)
 
                         Log.i("Info", "Payment successfully retrieved from Mollie: $payment++")
 
                     } catch (ex: Exception) {
-
                         Log.i("Info", "Failed to retrieve payment: $ex")
                     }
                 } else {
@@ -112,9 +149,8 @@ class MolliePaymentRepository {
             }
 
             override fun onFailure(call: Call<MolliePayment>, t: Throwable) {
-
                 Log.i(
-                    "Info","Request failed with error: ${t.localizedMessage}"
+                    "Info", "Request failed with error: ${t.localizedMessage}"
                 )
             }
         })
@@ -122,15 +158,12 @@ class MolliePaymentRepository {
 
     fun retrievePaymentUpdateById(
         mollieId: String,
-        context: Context,
-        binding: ActivityMainBinding,
         callback: (MolliePayment?) -> Unit
     ) {
 
-        val retrofitPayment = generateRetrofitPayment("mollieAPI")
         val mollieHeader = getHeaderMap()
         val call: Call<MolliePayment> =
-            retrofitPayment.retrievePaymentById(mollieHeader, mollieId)
+            retrofitMolliePayment.retrievePaymentById(mollieHeader, mollieId)
 
         call.enqueue(object : Callback<MolliePayment> {
             override fun onResponse(call: Call<MolliePayment>, response: Response<MolliePayment>) {
@@ -139,13 +172,12 @@ class MolliePaymentRepository {
 
                     try {
 
-                        payment = response.body() as MolliePayment
+                        val payment = response.body() as MolliePayment
                         callback(payment)
 
                         Log.i("Info", "Payment update successfully retrieved from Mollie: $payment")
 
                     } catch (ex: Exception) {
-
                         Log.i("Info", "Failed to retrieve payment update: $ex")
                     }
                 } else {
@@ -157,37 +189,11 @@ class MolliePaymentRepository {
             }
 
             override fun onFailure(call: Call<MolliePayment>, t: Throwable) {
-
                 Log.i(
                     "Info", "Failed to retrieve payment update. Error: ${t.localizedMessage}"
                 )
             }
         })
-    }
-
-    private fun generateRetrofitPayment(environment: String): RetrofitMolliePayment {
-
-        val baseUrl = when (environment) {
-            "backend" -> {
-                AppSettings.baseUrl
-            }
-            "mollieAPI" -> {
-                AppSettings.mollieURLString
-            }
-            else -> {
-                ""
-            }
-        }
-
-        val mapper = ObjectMapper()
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-
-        val retrofit = Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .addConverterFactory(JacksonConverterFactory.create(mapper))
-            .build()
-
-        return retrofit.create(RetrofitMolliePayment::class.java)
     }
 
     private fun getHeaderMap(): Map<String, String> {
@@ -199,37 +205,5 @@ class MolliePaymentRepository {
         headerMap[mollieAuthHeader] = mollieToken
 
         return headerMap
-    }
-
-    fun convertPaymentToPaymentDTO(session: SessionDTO, payment: MolliePayment): MolliePaymentDTO {
-
-        val molliePaymentId = session.payment?.molliePaymentId
-        val amount = HashMap<String, String>().apply {
-            this["currency"] = payment.amount.currency
-            this["value"] = payment.amount.value
-        }
-        val method = payment.method.toString()
-        val checkoutUrl = payment.links?.checkout?.href
-        val sessionId = session.id
-
-        return MolliePaymentDTO(
-            molliePaymentId,
-            amount,
-            payment.createdAt,
-            payment.description,
-            payment.expiresAt,
-            payment.id,
-            payment.isCancelable,
-            method,
-            payment.mode,
-            payment.profileId,
-            checkoutUrl,
-            payment.redirectUrl,
-            payment.webhookUrl,
-            payment.resource,
-            payment.sequenceType,
-            payment.status,
-            sessionId
-        )
     }
 }

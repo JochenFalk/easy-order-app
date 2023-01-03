@@ -1,7 +1,6 @@
 package com.easysystems.easyorder.retrofit
 
 import com.easysystems.easyorder.data.MolliePayment
-import com.easysystems.easyorder.data.MolliePaymentDTO
 import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.http.*
@@ -13,7 +12,4 @@ interface RetrofitMolliePayment {
 
     @GET("payments/{id}")
     fun retrievePaymentById(@HeaderMap headers: Map<String, String>, @Path("id") id: String) : Call<MolliePayment>
-
-    @POST("molliePayments")
-    fun createPayment(@Body molliePayment: MolliePaymentDTO) : Call<MolliePaymentDTO>
 }

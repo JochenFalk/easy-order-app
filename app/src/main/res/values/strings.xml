@@ -8,6 +8,5 @@
         <item>Select payment option</item>
         <item>Ideal</item>
         <item>Credit card</item>
-        <item>Apple pay</item>
     </string-array>
 </resources>

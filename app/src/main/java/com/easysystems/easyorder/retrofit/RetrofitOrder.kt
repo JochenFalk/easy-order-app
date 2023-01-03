@@ -9,9 +9,6 @@ import retrofit2.http.Path
 
 interface RetrofitOrder {
 
-    @GET("orders/{id}")
-    fun retrieveOrderById(@Path("id") id: Int) : Call<OrderDTO>
-
     @POST("orders")
     fun createOrder(@Body orderDTO: OrderDTO) : Call<OrderDTO>
 }

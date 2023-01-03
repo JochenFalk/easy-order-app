@@ -18,6 +18,7 @@ data class OrderDTO(
     enum class Status {
         OPENED,
         SENT,
+        CANCELED,
         LOCKED
     }
 }

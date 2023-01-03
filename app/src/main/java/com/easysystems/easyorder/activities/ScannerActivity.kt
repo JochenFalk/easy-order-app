@@ -1,14 +1,13 @@
-package com.easysystems.easyorder
+package com.easysystems.easyorder.activities
 
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.easysystems.easyorder.MainActivity.Companion.RESULT
+import com.easysystems.easyorder.activities.MySplashActivity.Companion.RESULT
 import com.google.zxing.Result
 import me.dm7.barcodescanner.zxing.ZXingScannerView
 
@@ -21,11 +20,8 @@ class ScannerActivity : AppCompatActivity(), ZXingScannerView.ResultHandler {
 
         supportActionBar?.title = "Scan the table QR code"
 
-        Log.i("Info","Scanning activity started")
-
         scannerView = ZXingScannerView(this)
         setContentView(scannerView)
-
         setPermissions()
     }
 
@@ -41,10 +37,8 @@ class ScannerActivity : AppCompatActivity(), ZXingScannerView.ResultHandler {
     }
 
     private fun setPermissions() {
-
         val permissions = ContextCompat.checkSelfPermission(this,
             android.Manifest.permission.CAMERA)
-
         if (permissions != PackageManager.PERMISSION_GRANTED)
         {
             makeRequest()
@@ -76,8 +70,7 @@ class ScannerActivity : AppCompatActivity(), ZXingScannerView.ResultHandler {
     }
 
     override fun handleResult(result: Result?) {
-
-        val intent = Intent(applicationContext, MainActivity::class.java)
+        val intent = Intent(applicationContext, MySplashActivity::class.java)
         intent.putExtra(RESULT, result.toString())
         startActivity(intent)
     }

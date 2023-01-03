@@ -9,14 +9,10 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.R
-import com.easysystems.easyorder.data.ItemDTO
-import com.easysystems.easyorder.data.SessionDTO
+import java.text.DecimalFormat
+import java.text.NumberFormat
 
-class ItemAdapter(
-    private var activity: MainActivity,
-    private var sessionDTO: SessionDTO,
-    private var itemDTOList: ArrayList<ItemDTO>
-) : RecyclerView.Adapter<ItemAdapter.ItemListViewHolder>() {
+class ItemAdapter : RecyclerView.Adapter<ItemAdapter.ItemListViewHolder>() {
 
     inner class ItemListViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         var name: TextView = view.findViewById(R.id.cardViewName)
@@ -34,9 +30,12 @@ class ItemAdapter(
 
     override fun onBindViewHolder(holder: ItemListViewHolder, position: Int) {
 
-        val item = itemDTOList[position]
-        val name = item.name
-        val price = item.price
+        val sessionDTO = MainActivity.sessionDTO
+        val itemDTOList = MainActivity.itemDTOList
+
+        val item = itemDTOList?.get(position)
+        val name = item?.name
+        val price = item?.price
         val priceAsString = "€ $price"
 
         holder.name.text = name
@@ -44,20 +43,37 @@ class ItemAdapter(
 
         holder.btnAdd.setOnClickListener {
 
-            val orders = sessionDTO.orders
+            val orders = sessionDTO?.orders
             val order = orders?.last()
 
-            order?.items?.add(itemDTOList[position])
+            order?.items?.add(itemDTOList!![position])
             order?.total = order?.total?.plus(price!!)
-            sessionDTO.total = sessionDTO.total?.plus(price!!)
-
-            activity.passSessionToActivity(sessionDTO)
+            sessionDTO?.total = sessionDTO?.total?.plus(price!!)
+            MainActivity.sessionDTO = sessionDTO
 
             Log.i("Info", "Item added to order ${orders?.size}")
+
+            updateView(holder)
         }
     }
 
+    private fun updateView(holder: ItemListViewHolder) {
+        val decimal: NumberFormat = DecimalFormat("0.00")
+        val sessionDTO = MainActivity.sessionDTO
+        val sessionTotal = sessionDTO?.total
+        val order = sessionDTO?.orders?.last()
+        val orderBtnText =
+            "${holder.itemView.rootView.resources.getString(R.string.btnOrders)} (Total: € ${decimal.format(sessionTotal)})"
+        val count = order?.items?.size
+
+        val btnOrders = holder.itemView.rootView.findViewById<Button>(R.id.btnOrders)
+        val iconOrdersBadge = holder.itemView.rootView.findViewById<com.joanzapata.iconify.widget.IconButton>(R.id.iconOrdersBadge)
+
+        btnOrders.text = orderBtnText
+        iconOrdersBadge.text = count.toString()
+    }
+
     override fun getItemCount(): Int {
-        return itemDTOList.size
+        return MainActivity.itemDTOList?.size ?: 0
     }
 }

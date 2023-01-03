@@ -5,10 +5,9 @@ import android.util.Log
 object AppSettings {
 
     private const val defaultIpAddress = "192.168.178.136" // "localhost
-    const val defaultBaseURL = "http://$defaultIpAddress:8080/v1/"
+    private const val defaultBaseURL = "http://$defaultIpAddress:8080/v1/"
 
-    private const val ngRokIpAddress =
-        "https://afc9-2001-1c05-2208-c300-d822-ad4f-1841-ae6.eu.ngrok.io"
+    private const val ngRokIpAddress = "https://fd2f-2001-1c05-2208-c300-89b9-f934-d21c-f486.eu.ngrok.io"
     const val ngRokBaseURL = "$ngRokIpAddress/v1/"
 
     const val mollieURLString = "https://api.mollie.com/v2/"
@@ -17,14 +16,19 @@ object AppSettings {
     const val mollieRedirectUrl = "mollie-app://payment-return"
     const val mollieWebhookMapping = "mollieWebhook"
 
+    private var isConnectedToWifi = false
+
     var baseUrl = defaultBaseURL
 
-    fun setAppConfiguration(ssid: String) {
+    fun setAppConfiguration(ssid: String, callback: (Boolean?) -> Unit) {
 
-        if (ssid == "Mediaan") {
-            baseUrl = ngRokBaseURL
+        if (!isConnectedToWifi) {
+            if (ssid == "Mediaan") {
+                baseUrl = ngRokBaseURL
+            }
+            isConnectedToWifi = true
+            Log.i("Info", "SSID is: $ssid. BaseUrl is set to: $baseUrl")
         }
-
-        Log.i("Info", "SSID is: $ssid. BaseUrl is set to: $baseUrl")
+        callback(isConnectedToWifi)
     }
 }

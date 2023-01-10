@@ -12,9 +12,9 @@ class SessionRepository {
 
     private val retrofitSession : RetrofitSession by inject(RetrofitSession::class.java)
 
-    fun getSessionById(id: Int, callback:(SessionDTO?)->Unit) {
+    fun verifyTabletop(tabletopId: Int, authCode: String, callback: (SessionDTO?)->Unit) {
 
-        val call: Call<SessionDTO> = retrofitSession.retrieveSessionById(id)
+        val call: Call<SessionDTO> = retrofitSession.verifyAndRetrieveSessionByTabletop(tabletopId, authCode)
 
         call.enqueue(object : Callback<SessionDTO> {
             override fun onResponse(call: Call<SessionDTO>, response: Response<SessionDTO>) {
@@ -32,12 +32,12 @@ class SessionRepository {
                         Log.i("Info","Session not found: $ex")
                     }
                 } else {
-                    Log.i("Info","Failed to get session for id: $id")
+                    Log.i("Info","Failed to verify session for table id: $tabletopId")
                 }
             }
 
             override fun onFailure(call: Call<SessionDTO>, t: Throwable) {
-                Log.i("Info","Failed to get session. Error: ${t.localizedMessage}")
+                Log.i("Info","Failed to verify session. Error: ${t.localizedMessage}")
             }
         })
     }
@@ -69,35 +69,5 @@ class SessionRepository {
                     Log.i("Info", "Failed to update session. Error: ${t.localizedMessage}")
                 }
             })
-    }
-
-    fun verifyTabletop(tabletopId: Int, authCode: String, callback: (SessionDTO?)->Unit) {
-
-        val call: Call<SessionDTO> = retrofitSession.verifyAndRetrieveSessionByTabletop(tabletopId, authCode)
-
-        call.enqueue(object : Callback<SessionDTO> {
-            override fun onResponse(call: Call<SessionDTO>, response: Response<SessionDTO>) {
-
-                if (response.isSuccessful) {
-
-                    try {
-
-                        val sessionDTO = response.body() as SessionDTO
-                        callback(sessionDTO)
-
-                        Log.i("Info","Retrieved session successfully: $sessionDTO")
-
-                    } catch (ex: Exception) {
-                        Log.i("Info","Session not found: $ex")
-                    }
-                } else {
-                    Log.i("Info","Failed to verify session for table id: $tabletopId")
-                }
-            }
-
-            override fun onFailure(call: Call<SessionDTO>, t: Throwable) {
-                Log.i("Info","Failed to verify session. Error: ${t.localizedMessage}")
-            }
-        })
     }
 }

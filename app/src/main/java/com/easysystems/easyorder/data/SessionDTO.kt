@@ -2,12 +2,14 @@ package com.easysystems.easyorder.data
 
 import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.helpclasses.AppSettings
-import com.easysystems.easyorder.repositories.PaymentRepository
 import com.easysystems.easyorder.repositories.OrderRepository
+import com.easysystems.easyorder.repositories.PaymentRepository
 import com.easysystems.easyorder.repositories.SessionRepository
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.koin.java.KoinJavaComponent.inject
 import java.io.Serializable
+import java.text.DecimalFormat
+import java.text.NumberFormat
 
 data class SessionDTO(
     @JsonProperty("id")
@@ -15,7 +17,7 @@ data class SessionDTO(
     @JsonProperty("status")
     var status: Status? = null,
     @JsonProperty("tabletopDTO")
-    var tabletopDTO: TabletopDTO? = null,
+    var tabletop: TabletopDTO? = null,
     @JsonProperty("total")
     var total: Double? = null,
     @JsonProperty("orders")
@@ -43,16 +45,23 @@ data class SessionDTO(
                 sessionDTO.orders?.sortBy { it.id }
                 sessionDTO.payments?.sortBy { it.molliePaymentId }
                 MainActivity.sessionDTO = sessionDTO
+
                 if (sessionDTO.payments?.size != 0) {
                     MainActivity.paymentDTO = sessionDTO.payments?.last()
                 }
+
                 callback(sessionDTO)
             }
         }
     }
 
-    fun createPayment(paymentMethod: String, amount: String, callback: (MolliePaymentDTO?) -> Unit) {
+    fun addNewPaymentToSession(callback: (MolliePaymentDTO?) -> Unit) {
         this.id?.let { id ->
+
+            val paymentMethod = MainActivity.paymentMethod
+
+            val decimal: NumberFormat = DecimalFormat("0.00")
+            val amount = decimal.format(this.total).replace(',', '.')
 
             val ngRokBaseURL = AppSettings.ngRokBaseURL
             val mollieRedirectUrl = AppSettings.mollieRedirectUrl
@@ -76,12 +85,21 @@ data class SessionDTO(
             ) { paymentFromMollie ->
 
                 if (paymentFromMollie != null) {
+
                     paymentFromMollie.sessionId = this.id!!
                     val paymentFromMollieDTO = paymentFromMollie.convertPaymentToPaymentDTO()
+
                     paymentRepository.createPaymentOnBackend(
                         this,
                         paymentFromMollieDTO
-                    ) { callback(it) }
+                    ) { paymentFromBackendDTO ->
+
+                        if (paymentFromBackendDTO != null) {
+                            this.payments?.add(paymentFromBackendDTO)
+                            this.status = Status.CHANGED
+                            callback(paymentFromBackendDTO)
+                        }
+                    }
                 }
             }
         }
@@ -96,12 +114,29 @@ data class SessionDTO(
         }
     }
 
-    fun createOrder(callback: (OrderDTO?) -> Unit) {
+    fun addNewOrderToSession(callback: (OrderDTO?) -> Unit) {
         this.id?.let { id ->
-            orderRepository.createOrder(id) { order ->
 
-                this.orders?.add(order as OrderDTO)
-                callback(order)
+            orderRepository.createOrder(id) { orderDTO ->
+
+                this.orders?.add(orderDTO as OrderDTO)
+                callback(orderDTO)
+            }
+        }
+    }
+
+    fun resetSession() {
+
+        if (this.status != Status.CLOSED) {
+
+            this.status = Status.OPENED
+
+            if (this.orders?.last()?.status != OrderDTO.Status.OPENED) {
+                this.addNewOrderToSession {
+                    this.updateSession { }
+                }
+            } else {
+                this.updateSession { }
             }
         }
     }

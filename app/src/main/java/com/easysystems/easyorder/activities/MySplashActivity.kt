@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.easysystems.easyorder.MainActivity
-import com.easysystems.easyorder.data.OrderDTO
 import com.easysystems.easyorder.databinding.ActivitySplashBinding
 import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
 import com.easysystems.easyorder.repositories.OrderRepository
@@ -17,7 +16,6 @@ import org.koin.android.ext.android.inject
 class MySplashActivity : AppCompatActivity() {
 
     private val sessionRepository: SessionRepository by inject()
-    private val orderRepository: OrderRepository by inject()
     private val sharedPreferencesHelper: SharedPreferencesHelper by inject()
 
     private lateinit var binding: ActivitySplashBinding
@@ -68,25 +66,25 @@ class MySplashActivity : AppCompatActivity() {
 
             if (sessionDTO != null) {
                 sharedPreferencesHelper
-                    .savePreferences(this, "sessionData", "sessionId", intValue = sessionDTO.id)
+                    .savePreferences(
+                        this,
+                        "sessionData",
+                        "sessionId",
+                        intValue = sessionDTO.id
+                    )
                 if (sessionDTO.orders?.size == 0) {
-                    sessionDTO.id?.let { id ->
-                        sessionDTO.orders.let { orders ->
-                            orderRepository.createOrder(id) { order ->
-                                orders?.add(order as OrderDTO)?.apply {
-                                    sessionDTO.updateSession { updatedSession ->
-                                        if (updatedSession != null) {
-                                            updatedSession.orders?.sortBy { it.id }
-                                            callMainActivity()
-                                        }
-                                    }
-                                }
-                            }
+                    sessionDTO.addNewOrderToSession {
+                        sessionDTO.updateSession {
+                            callMainActivity()
                         }
                     }
                 } else {
-                    callMainActivity()
+                    sessionDTO.updateSession {
+                        callMainActivity()
+                    }
                 }
+            } else {
+                callMainActivity()
             }
         }
     }

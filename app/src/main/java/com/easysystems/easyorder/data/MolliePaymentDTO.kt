@@ -1,5 +1,7 @@
 package com.easysystems.easyorder.data
 
+import android.content.Intent
+import android.net.Uri
 import com.easysystems.easyorder.repositories.PaymentRepository
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.koin.java.KoinJavaComponent.inject
@@ -59,6 +61,14 @@ data class MolliePaymentDTO(
             return paymentRepository.updatePaymentToBackend(this) { molliePaymentDTO ->
                 callback(molliePaymentDTO)
             }
+        }
+    }
+
+    fun getCheckoutIntent(callback: (Intent?) -> Unit) {
+        this.checkoutUrl?.let {
+            val browserIntent = Intent(Intent.ACTION_VIEW)
+            browserIntent.data = Uri.parse(it)
+            callback(browserIntent)
         }
     }
 }

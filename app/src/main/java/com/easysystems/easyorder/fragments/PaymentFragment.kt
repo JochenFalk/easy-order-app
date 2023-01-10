@@ -1,7 +1,5 @@
 package com.easysystems.easyorder.fragments
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,11 +10,7 @@ import androidx.fragment.app.Fragment
 import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.R
 import com.easysystems.easyorder.adapters.CustomExpandableListAdapter
-import com.easysystems.easyorder.data.MolliePaymentDTO
-import com.easysystems.easyorder.data.OrderDTO
-import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.FragmentPaymentBinding
-import com.easysystems.easyorder.helpclasses.AppSettings
 import java.text.DecimalFormat
 import java.text.NumberFormat
 
@@ -38,7 +32,8 @@ class PaymentFragment : Fragment() {
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    resetPayment()
+                    MainActivity.sessionDTO?.resetSession()
+                    requireActivity().supportFragmentManager.popBackStack()
                 }
             })
 
@@ -81,13 +76,13 @@ class PaymentFragment : Fragment() {
         }
 
         binding.btnStartPayment.setOnClickListener {
-            checkMolliePaymentStatus()
+            handlePaymentStatus()
         }
 
         updateView()
     }
 
-    private fun checkMolliePaymentStatus() {
+    private fun handlePaymentStatus() {
 
         val sessionDTO = MainActivity.sessionDTO
         val payment = MainActivity.paymentDTO
@@ -101,30 +96,36 @@ class PaymentFragment : Fragment() {
                         payment.status = "canceled"
                         payment.updatePaymentToBackend { molliePaymentDTO ->
                             if (molliePaymentDTO != null) {
-                                createMolliePayment(sessionDTO, paymentMethod)
+                                sessionDTO.addNewPaymentToSession {
+                                    sessionDTO.updateSession {
+                                        MainActivity.paymentDTO?.getCheckoutIntent {
+                                            startActivity(it)
+                                        }
+                                    }
+                                }
                             }
                         }
                     } else {
                         when (payment.status?.uppercase()) {
                             "OPEN" -> {
-                                openMollieCheckout(payment)
+                                openMollieCheckout()
                             }
                             "CANCELED" -> {
-                                createMolliePayment(sessionDTO, paymentMethod)
+                                addNewPaymentToSession()
                             }
                             "PENDING" -> {}
                             "AUTHORIZED" -> {}
                             "EXPIRED" -> {
-                                createMolliePayment(sessionDTO, paymentMethod)
+                                addNewPaymentToSession()
                             }
                             "FAILED" -> {
-                                createMolliePayment(sessionDTO, paymentMethod)
+                                addNewPaymentToSession()
                             }
                             "PAID" -> {}
                         }
                     }
                 } else {
-                    createMolliePayment(sessionDTO, paymentMethod)
+                    addNewPaymentToSession()
                 }
             } else {
                 Toast.makeText(
@@ -137,51 +138,19 @@ class PaymentFragment : Fragment() {
         }
     }
 
-    private fun createMolliePayment(sessionDTO: SessionDTO, paymentMethod: String) {
-
-        val decimal: NumberFormat = DecimalFormat("0.00")
-        val amount = decimal.format(sessionDTO.total).replace(',', '.')
-
-        if (amount != "0.00") {
-            sessionDTO.createPayment(paymentMethod, amount) { paymentFromBackendDTO ->
-                if (paymentFromBackendDTO != null) {
-                    sessionDTO.status = SessionDTO.Status.CHANGED
-                    sessionDTO.payments?.add(paymentFromBackendDTO)
-                    sessionDTO.updateSession { openMollieCheckout(paymentFromBackendDTO) }
-                }
-            }
-        } else {
-            Toast.makeText(
-                requireContext(),
-                "Please add something to your order before starting a payment ;)",
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
-    private fun openMollieCheckout(payment: MolliePaymentDTO) {
-        payment.checkoutUrl?.let {
-            val browserIntent = Intent(Intent.ACTION_VIEW)
-            browserIntent.data = Uri.parse(it)
-            startActivity(browserIntent)
-        }
-    }
-
-    private fun resetPayment() {
+    private fun addNewPaymentToSession() {
 
         val sessionDTO = MainActivity.sessionDTO
 
-        if (sessionDTO?.status != SessionDTO.Status.CLOSED) {
-            sessionDTO?.status = SessionDTO.Status.OPENED
-            if (sessionDTO?.orders?.last()?.status != OrderDTO.Status.OPENED) {
-                sessionDTO?.createOrder {
-                    sessionDTO.updateSession { }
-                }
-            } else {
-                sessionDTO.updateSession { }
+        sessionDTO?.addNewPaymentToSession {
+            sessionDTO.updateSession {
+                openMollieCheckout()
             }
         }
-        requireActivity().supportFragmentManager.popBackStack()
+    }
+
+    private fun openMollieCheckout() {
+        MainActivity.paymentDTO?.getCheckoutIntent { startActivity(it) }
     }
 
     private fun updateView() {

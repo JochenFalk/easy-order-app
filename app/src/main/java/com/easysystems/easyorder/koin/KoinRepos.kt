@@ -15,9 +15,13 @@ import retrofit2.converter.jackson.JacksonConverterFactory
 
 val koinRepos = module {
     single(named("backend")) {
+
+        val mapper = ObjectMapper()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+
         Retrofit.Builder()
             .baseUrl(AppSettings.baseUrl)
-            .addConverterFactory(JacksonConverterFactory.create())
+            .addConverterFactory(JacksonConverterFactory.create(mapper))
             .build()
             .create(RetrofitBackendPayment::class.java)
     }

@@ -28,13 +28,11 @@ import com.easysystems.easyorder.fragments.PaymentFragment
 import com.easysystems.easyorder.helpclasses.AppSettings
 import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
 import com.easysystems.easyorder.repositories.ItemRepository
-import com.easysystems.easyorder.repositories.SessionRepository
 import org.koin.android.ext.android.inject
 
 class MainActivity : AppCompatActivity() {
 
     private val itemRepository: ItemRepository by inject()
-    private val sessionRepository: SessionRepository by inject()
     private val sharedPreferencesHelper: SharedPreferencesHelper by inject()
 
     private lateinit var binding: ActivityMainBinding
@@ -44,6 +42,7 @@ class MainActivity : AppCompatActivity() {
         var sessionDTO: SessionDTO? = SessionDTO()
         var paymentDTO: MolliePaymentDTO? = null
         var paymentMethod = ""
+        var isAppLoaded = false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,12 +77,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        itemRepository.getAllItems {
-            if (it != null) {
-                itemDTOList = it
-            }
-        }
-
         setContentView(binding.root)
     }
 
@@ -113,9 +106,16 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
 
         sessionDTO?.updateSession { sessionDTO ->
+
             if (sessionDTO != null) {
+
                 sharedPreferencesHelper
-                    .savePreferences(this, "sessionData", "sessionId", intValue = sessionDTO.id)
+                    .savePreferences(
+                        this,
+                        "sessionData",
+                        "sessionId",
+                        intValue = sessionDTO.id
+                    )
                 sharedPreferencesHelper
                     .savePreferences(
                         this,
@@ -127,43 +127,81 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onStop() {
-        super.onStop()
-        paymentDTO = null
-        paymentMethod = ""
-    }
-
     override fun onResume() {
         super.onResume()
 
-        sharedPreferencesHelper
-            .retrievePreferences(this, "sessionData", "sessionId", "INT").let { sessionId ->
-                if (sessionId as Int == 0) {
-                    checkWifiConnection()
-                } else {
-                    sessionRepository.getSessionById(sessionId) { sessionDTO ->
+        if (!isAppLoaded) {
+            checkWifiConnection()
+        } else {
 
-                        if (sessionDTO != null) {
-                            sessionDTO.orders?.sortBy { it.id }
-                            MainActivity.sessionDTO = sessionDTO
-                            if (sessionDTO.payments?.size != 0) {
-                                paymentDTO = sessionDTO.payments?.last()
+            sharedPreferencesHelper
+                .retrievePreferences(
+                    this,
+                    "sessionData",
+                    "sessionId",
+                    "INT"
+                ).let { sessionId ->
+
+                    if (sessionId as Int == 0) {
+                        callSplashActivity()
+                    } else {
+                        handleSessionState()
+                    }
+                }
+        }
+    }
+
+    private fun callSplashActivity() {
+        val intent = Intent(this@MainActivity, MySplashActivity::class.java)
+        startActivity(intent)
+    }
+
+    private fun callItemListFragment() {
+
+        val fragmentManager: FragmentManager = supportFragmentManager
+        val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
+        val itemListFragment = ItemListFragment()
+
+        fragmentTransaction.replace(R.id.frame, itemListFragment).addToBackStack(null)
+        fragmentTransaction.commit()
+    }
+
+    private fun checkWifiConnection() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1
+            )
+        } else {
+            if (!isAppLoaded) {
+
+                val wifiManager =
+                    applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                val wifiInfo: WifiInfo = wifiManager.connectionInfo
+
+                if (wifiInfo.supplicantState == SupplicantState.COMPLETED) {
+
+                    val ssid = wifiInfo.ssid.toString().substring(1, wifiInfo.ssid.length - 1)
+                    AppSettings.setAppConfiguration(ssid) { boolean ->
+
+                        isAppLoaded = boolean
+                        itemRepository.getAllItems { itemList ->
+
+                            if (itemList != null) {
+                                itemDTOList = itemList
+                            } else {
+                                Log.i("Info", "item list was not loaded!")
                             }
-                            sharedPreferencesHelper
-                                .savePreferences(
-                                    this,
-                                    "sessionData",
-                                    "sessionId",
-                                    intValue = sessionDTO.id
-                                )
-                            loadSessionInfo()
                         }
+                        callSplashActivity()
                     }
                 }
             }
+        }
     }
 
-    private fun loadSessionInfo() {
+    private fun handleSessionState() {
 
         when (sessionDTO?.status) {
             SessionDTO.Status.OPENED -> {
@@ -201,104 +239,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             SessionDTO.Status.CHANGED -> {
-
-                paymentDTO?.updatePaymentFromMollie { updatedPayment ->
-
-                    updatedPayment?.sessionId = sessionDTO?.id
-                    updatedPayment?.molliePaymentId = paymentDTO?.molliePaymentId
-                    updatedPayment?.updatePaymentToBackend { molliePaymentDTO ->
-
-                        paymentDTO = molliePaymentDTO
-                        sessionDTO?.payments?.last {
-                            sessionDTO?.payments?.remove(it)!!
-                            sessionDTO?.payments?.add(paymentDTO!!)!!
-                        }
-                        sessionDTO?.updateSession { sessionDTO ->
-
-                            if (sessionDTO != null) {
-                                when (paymentDTO?.status?.uppercase()) {
-                                    "PAID" -> {
-                                        Log.i("Info", "Payment status is paid")
-                                        sessionDTO.closeSession { closedSession ->
-
-                                            closedSession?.updateSession {
-                                                sharedPreferencesHelper.clearPreferences(
-                                                    this,
-                                                    "sessionData"
-                                                )
-                                                Toast.makeText(
-                                                    this@MainActivity,
-                                                    "Payment received :). Thank you for using EasyOrder services.",
-                                                    Toast.LENGTH_LONG
-                                                ).show()
-                                                callSplashActivity()
-                                            }
-                                        }
-                                    }
-                                    "OPEN" -> {
-                                        Toast.makeText(
-                                            this@MainActivity,
-                                            "Payment failed for unknown reasons. Please try again.",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        Log.i("Info", "Payment status is open")
-                                        paymentDTO?.status = "failed"
-                                        sessionDTO.resetPaymentStatus { resetSession ->
-
-                                            resetSession?.payments = ArrayList()
-                                            resetSession?.updateSession {
-                                                callItemListFragment()
-                                            }
-                                        }
-                                    }
-                                    "EXPIRED" -> {
-                                        Toast.makeText(
-                                            this@MainActivity,
-                                            "Payment was expired. Please try again.",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        Log.i("Info", "Payment status is expired")
-                                        sessionDTO.resetPaymentStatus { resetSession ->
-
-                                            resetSession?.updateSession {
-                                                callItemListFragment()
-                                            }
-                                        }
-                                    }
-                                    "FAILED" -> {
-                                        Toast.makeText(
-                                            this@MainActivity,
-                                            "Payment failed :( Please try again.",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        Log.i("Info", "Payment status is failed")
-                                        sessionDTO.resetPaymentStatus { resetSession ->
-
-                                            resetSession?.updateSession {
-                                                callItemListFragment()
-                                            }
-                                        }
-                                    }
-                                    "CANCELED" -> {
-                                        Toast.makeText(
-                                            this@MainActivity,
-                                            "Payment was canceled. Please try another payment method.",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        Log.i("Info", "Payment status is canceled")
-                                        sessionDTO.resetPaymentStatus { resetSession ->
-
-                                            resetSession?.updateSession {
-                                                callItemListFragment()
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            Log.i("Info", "Session status is changed")
-                        }
-                    }
-                }
+                handlePaymentStateChange()
+                Log.i("Info", "Session status is changed")
             }
             else -> {
                 callSplashActivity()
@@ -306,35 +248,103 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun callSplashActivity() {
-        val intent = Intent(this@MainActivity, MySplashActivity::class.java)
-        startActivity(intent)
-    }
+    private fun handlePaymentStateChange() {
 
-    private fun callItemListFragment() {
-        val fragmentManager: FragmentManager = supportFragmentManager
-        val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
-        val itemListFragment = ItemListFragment()
+        paymentDTO?.updatePaymentFromMollie { updatedPayment ->
 
-        fragmentTransaction.replace(R.id.frame, itemListFragment).addToBackStack(null)
-        fragmentTransaction.commit()
-    }
+            updatedPayment?.sessionId = sessionDTO?.id
+            updatedPayment?.molliePaymentId = paymentDTO?.molliePaymentId
+            updatedPayment?.updatePaymentToBackend { molliePaymentDTO ->
 
-    private fun checkWifiConnection() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1
-            )
-        } else {
-            val wifiManager =
-                applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-            val wifiInfo: WifiInfo = wifiManager.connectionInfo
-            if (wifiInfo.supplicantState == SupplicantState.COMPLETED) {
-                val ssid = wifiInfo.ssid.toString().substring(1, wifiInfo.ssid.length - 1)
-                AppSettings.setAppConfiguration(ssid) {
-                    callSplashActivity()
+                paymentDTO = molliePaymentDTO
+                sessionDTO?.payments?.last {
+                    sessionDTO?.payments?.remove(it)!!
+                    sessionDTO?.payments?.add(paymentDTO!!)!!
+                }
+                sessionDTO?.updateSession { sessionDTO ->
+
+                    if (sessionDTO != null) {
+
+                        when (paymentDTO?.status?.uppercase()) {
+                            "PAID" -> {
+                                Log.i("Info", "Payment status is paid")
+                                sessionDTO.closeSession { closedSession ->
+
+                                    closedSession?.updateSession {
+                                        sharedPreferencesHelper.clearPreferences(
+                                            this,
+                                            "sessionData"
+                                        )
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            "Payment received :). Thank you for using EasyOrder services.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                        callSplashActivity()
+                                    }
+                                }
+                            }
+                            "OPEN" -> {
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Payment failed for unknown reasons. Please try again.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                Log.i("Info", "Payment status is open")
+                                paymentDTO?.status = "failed"
+                                sessionDTO.resetPaymentStatus { resetSession ->
+
+                                    resetSession?.payments = ArrayList()
+                                    resetSession?.updateSession {
+                                        callItemListFragment()
+                                    }
+                                }
+                            }
+                            "EXPIRED" -> {
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Payment was expired. Please try again.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                Log.i("Info", "Payment status is expired")
+                                sessionDTO.resetPaymentStatus { resetSession ->
+
+                                    resetSession?.updateSession {
+                                        callItemListFragment()
+                                    }
+                                }
+                            }
+                            "FAILED" -> {
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Payment failed :( Please try again.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                Log.i("Info", "Payment status is failed")
+                                sessionDTO.resetPaymentStatus { resetSession ->
+
+                                    resetSession?.updateSession {
+                                        callItemListFragment()
+                                    }
+                                }
+                            }
+                            "CANCELED" -> {
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Payment was canceled. Please try another payment method.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                Log.i("Info", "Payment status is canceled")
+                                sessionDTO.resetPaymentStatus { resetSession ->
+
+                                    resetSession?.updateSession {
+                                        callItemListFragment()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Log.i("Info", "Session status is changed")
                 }
             }
         }

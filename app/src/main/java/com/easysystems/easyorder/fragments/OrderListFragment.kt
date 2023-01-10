@@ -89,7 +89,7 @@ class OrderListFragment : Fragment() {
                 if (lastOrder.items?.size != 0) {
                     lastOrder.status = OrderDTO.Status.SENT
                     sessionDTO.orders.let {
-                        sessionDTO.createOrder {
+                        sessionDTO.addNewOrderToSession {
                             sessionDTO.updateSession {
                                 updateView()
                             }

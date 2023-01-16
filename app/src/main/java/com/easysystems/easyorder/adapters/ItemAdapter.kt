@@ -9,10 +9,13 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.R
+import com.easysystems.easyorder.data.ItemDTO
 import java.text.DecimalFormat
 import java.text.NumberFormat
 
 class ItemAdapter : RecyclerView.Adapter<ItemAdapter.ItemListViewHolder>() {
+
+    val itemList = ArrayList<ItemDTO>()
 
     inner class ItemListViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         var name: TextView = view.findViewById(R.id.cardViewName)
@@ -31,11 +34,10 @@ class ItemAdapter : RecyclerView.Adapter<ItemAdapter.ItemListViewHolder>() {
     override fun onBindViewHolder(holder: ItemListViewHolder, position: Int) {
 
         val sessionDTO = MainActivity.sessionDTO
-        val itemDTOList = MainActivity.itemDTOList
 
-        val item = itemDTOList?.get(position)
-        val name = item?.name
-        val price = item?.price
+        val item = itemList[position]
+        val name = item.name
+        val price = item.price
         val priceAsString = "€ $price"
 
         holder.name.text = name
@@ -46,7 +48,7 @@ class ItemAdapter : RecyclerView.Adapter<ItemAdapter.ItemListViewHolder>() {
             val orders = sessionDTO?.orders
             val order = orders?.last()
 
-            order?.items?.add(itemDTOList!![position])
+            itemList[position].let { it1 -> order?.items?.add(it1) }
             order?.total = order?.total?.plus(price!!)
             sessionDTO?.total = sessionDTO?.total?.plus(price!!)
             MainActivity.sessionDTO = sessionDTO
@@ -74,6 +76,6 @@ class ItemAdapter : RecyclerView.Adapter<ItemAdapter.ItemListViewHolder>() {
     }
 
     override fun getItemCount(): Int {
-        return MainActivity.itemDTOList?.size ?: 0
+        return itemList.size
     }
 }

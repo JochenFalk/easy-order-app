@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.kapt'
 }
 
 android {
@@ -18,6 +19,10 @@ android {
 
     buildFeatures {
         viewBinding = true
+    }
+
+    dataBinding {
+        enabled = true
     }
 
     buildTypes {
@@ -80,4 +85,17 @@ dependencies {
     implementation 'io.insert-koin:koin-android:3.3.1'
     implementation 'io.insert-koin:koin-android-compat:3.3.1'
     implementation 'io.insert-koin:koin-androidx-navigation:3.3.1'
+
+    // MVVM & Data binding
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
+    implementation 'com.google.android.material:material:1.7.0'
+
+    //Kapt
+    kapt "com.android.databinding:compiler:$compiler_version"
+}
+
+apply plugin: 'kotlin-kapt'
+
+kapt {
+    generateStubs = true
 }

@@ -12,7 +12,7 @@ class ItemRepository {
 
     private val retrofitItem: RetrofitItem by inject(RetrofitItem::class.java)
 
-    fun getAllItems(callback: (ArrayList<ItemDTO>?) -> Unit) {
+    fun retrieveItems(callback: (ArrayList<ItemDTO>?) -> Unit) {
 
         val call: Call<List<ItemDTO>> = retrofitItem.retrieveAllItems()
 

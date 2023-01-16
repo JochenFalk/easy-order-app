@@ -27,18 +27,14 @@ import com.easysystems.easyorder.fragments.OrderListFragment
 import com.easysystems.easyorder.fragments.PaymentFragment
 import com.easysystems.easyorder.helpclasses.AppSettings
 import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
-import com.easysystems.easyorder.repositories.ItemRepository
 import org.koin.android.ext.android.inject
 
 class MainActivity : AppCompatActivity() {
 
-    private val itemRepository: ItemRepository by inject()
     private val sharedPreferencesHelper: SharedPreferencesHelper by inject()
-
     private lateinit var binding: ActivityMainBinding
 
     companion object {
-        var itemDTOList: ArrayList<ItemDTO>? = ArrayList()
         var sessionDTO: SessionDTO? = SessionDTO()
         var paymentDTO: MolliePaymentDTO? = null
         var paymentMethod = ""
@@ -186,14 +182,6 @@ class MainActivity : AppCompatActivity() {
                     AppSettings.setAppConfiguration(ssid) { boolean ->
 
                         isAppLoaded = boolean
-                        itemRepository.getAllItems { itemList ->
-
-                            if (itemList != null) {
-                                itemDTOList = itemList
-                            } else {
-                                Log.i("Info", "item list was not loaded!")
-                            }
-                        }
                         callSplashActivity()
                     }
                 }

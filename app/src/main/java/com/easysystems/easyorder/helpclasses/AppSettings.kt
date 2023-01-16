@@ -7,7 +7,7 @@ object AppSettings {
     private const val defaultIpAddress = "192.168.178.136" // "localhost
     private const val defaultBaseURL = "http://$defaultIpAddress:8080/v1/"
 
-    private const val ngRokIpAddress = "https://bb0a-83-232-94-162.eu.ngrok.io"
+    private const val ngRokIpAddress = "https://4a98-2001-1c05-2208-c300-e4fe-3d9d-d5a3-aa75.eu.ngrok.io"
     const val ngRokBaseURL = "$ngRokIpAddress/v1/"
 
     private const val primaryNetworkSSID = "Mediaan"

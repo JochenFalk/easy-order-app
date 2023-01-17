@@ -1,78 +1,49 @@
 package com.easysystems.easyorder.adapters
 
-import android.util.Log
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.easysystems.easyorder.MainActivity
-import com.easysystems.easyorder.R
 import com.easysystems.easyorder.data.ItemDTO
+import com.easysystems.easyorder.databinding.CardDesignBinding
+import com.easysystems.easyorder.viewModels.ItemListViewModel
 import java.text.DecimalFormat
 import java.text.NumberFormat
 
-class ItemAdapter : RecyclerView.Adapter<ItemAdapter.ItemListViewHolder>() {
+class ItemAdapter(private val viewModel: ItemListViewModel) : RecyclerView.Adapter<ItemAdapter.ItemHolder>() {
+
+    private lateinit var binding: CardDesignBinding
 
     val itemList = ArrayList<ItemDTO>()
 
-    inner class ItemListViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        var name: TextView = view.findViewById(R.id.cardViewName)
-        var price: TextView = view.findViewById(R.id.cardViewPrice)
-        var btnAdd: Button = view.findViewById(R.id.btnAdd)
-    }
+    inner class ItemHolder : RecyclerView.ViewHolder(binding.root) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemListViewHolder {
+        fun bind(item: ItemDTO) {
 
-        val view: View = LayoutInflater.from(parent.context)
-            .inflate(R.layout.card_design, parent, false)
+            val decimal: NumberFormat = DecimalFormat("0.00")
+            val priceAsString = "€ ${decimal.format(item.price)}"
 
-        return ItemListViewHolder(view)
-    }
-
-    override fun onBindViewHolder(holder: ItemListViewHolder, position: Int) {
-
-        val sessionDTO = MainActivity.sessionDTO
-
-        val item = itemList[position]
-        val name = item.name
-        val price = item.price
-        val priceAsString = "€ $price"
-
-        holder.name.text = name
-        holder.price.text = priceAsString
-
-        holder.btnAdd.setOnClickListener {
-
-            val orders = sessionDTO?.orders
-            val order = orders?.last()
-
-            itemList[position].let { it1 -> order?.items?.add(it1) }
-            order?.total = order?.total?.plus(price!!)
-            sessionDTO?.total = sessionDTO?.total?.plus(price!!)
-            MainActivity.sessionDTO = sessionDTO
-
-            Log.i("Info", "Item added to order ${orders?.size}")
-
-            updateView(holder)
+            binding.cardViewName.text = item.name
+            binding.cardViewPrice.text = priceAsString
         }
     }
 
-    private fun updateView(holder: ItemListViewHolder) {
-        val decimal: NumberFormat = DecimalFormat("0.00")
-        val sessionDTO = MainActivity.sessionDTO
-        val sessionTotal = sessionDTO?.total
-        val order = sessionDTO?.orders?.last()
-        val orderBtnText =
-            "${holder.itemView.rootView.resources.getString(R.string.btnOrders)} (Total: € ${decimal.format(sessionTotal)})"
-        val count = order?.items?.size
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemHolder {
 
-        val btnOrders = holder.itemView.rootView.findViewById<Button>(R.id.btnOrders)
-        val iconOrdersBadge = holder.itemView.rootView.findViewById<com.joanzapata.iconify.widget.IconButton>(R.id.iconOrdersBadge)
+        binding = CardDesignBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return ItemHolder()
+    }
 
-        btnOrders.text = orderBtnText
-        iconOrdersBadge.text = count.toString()
+    override fun onBindViewHolder(holder: ItemHolder, position: Int) {
+
+        val item: ItemDTO = itemList[position]
+        holder.bind(item)
+
+        binding.btnAdd.setOnClickListener {
+            viewModel.addItem(item)
+        }
+
+        viewModel.updateBottomNavigation.value = true
     }
 
     override fun getItemCount(): Int {

@@ -8,7 +8,7 @@
     android:paddingLeft="40dp">
 
     <TextView
-        android:id="@+id/expandedListItem"
+        android:id="@+id/itemName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
@@ -16,7 +16,7 @@
         tools:layout_editor_absoluteX="60dp" />
 
     <TextView
-        android:id="@+id/expandedListPrice"
+        android:id="@+id/itemPrice"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1.35"

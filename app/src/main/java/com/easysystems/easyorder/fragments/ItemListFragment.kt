@@ -2,15 +2,15 @@ package com.easysystems.easyorder.fragments
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.easysystems.easyorder.MainActivity
@@ -48,12 +48,12 @@ class ItemListFragment : Fragment() {
                 }
             })
 
-        viewModel = ViewModelProviders.of(this)[ItemListViewModel::class.java]
+        viewModel = ViewModelProvider(this)[ItemListViewModel::class.java]
 
         recyclerView = binding.recyclerView
         itemAdapter = activity.let {
             recyclerView.layoutManager = LinearLayoutManager(it)
-            ItemAdapter()
+            ItemAdapter(viewModel)
         }
         recyclerView.adapter = itemAdapter
 
@@ -61,14 +61,13 @@ class ItemListFragment : Fragment() {
             callOrderListFragment()
         }
 
-        updateView()
         setObservers()
     }
 
     @SuppressLint("NotifyDataSetChanged")
     private fun setObservers() {
 
-        viewModel.getItemList().observe(viewLifecycleOwner) { itemList ->
+        viewModel.itemList.observe(viewLifecycleOwner) { itemList ->
 
             if (itemList != null) {
                 itemAdapter.itemList.clear()
@@ -77,10 +76,22 @@ class ItemListFragment : Fragment() {
             }
         }
 
-        viewModel.getItemListError().observe(viewLifecycleOwner) { boolean ->
+        viewModel.dataRetrievalError.observe(viewLifecycleOwner) { boolean ->
 
             if (boolean) {
-                Log.i("Info", "item list was not loaded!")
+                Toast.makeText(
+                    requireActivity(),
+                    "Oeps! Something went wrong loading the menu items:(",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        viewModel.updateBottomNavigation.observe(viewLifecycleOwner) { boolean ->
+
+            if (boolean) {
+                viewModel.updateBottomNavigation.value = false
+                updateBottomNavigation()
             }
         }
     }
@@ -95,17 +106,16 @@ class ItemListFragment : Fragment() {
         fragmentTransaction.commit()
     }
 
-    private fun updateView() {
+    private fun updateBottomNavigation() {
 
         val decimal: NumberFormat = DecimalFormat("0.00")
         val sessionDTO = MainActivity.sessionDTO
-        val sessionTotal = sessionDTO?.total
-        val order = sessionDTO?.orders?.last()
         val orderBtnText =
-            "${resources.getString(R.string.btnOrders)} (Total: € ${decimal.format(sessionTotal)})"
+            "${resources.getString(R.string.btnOrders)} (Total: € ${decimal.format(sessionDTO?.total)})"
+        val order = sessionDTO?.orders?.last()
         val count = order?.items?.size
 
         binding.btnOrders.text = orderBtnText
-        binding.iconOrdersBadge.text = count.toString()
+        binding.badgeOrders.text = count.toString()
     }
 }

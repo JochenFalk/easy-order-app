@@ -9,7 +9,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.R
-import com.easysystems.easyorder.adapters.CustomExpandableListAdapter
+import com.easysystems.easyorder.adapters.ExpandableOrderListAdapter
 import com.easysystems.easyorder.databinding.FragmentPaymentBinding
 import java.text.DecimalFormat
 import java.text.NumberFormat
@@ -167,9 +167,9 @@ class PaymentFragment : Fragment() {
 
         binding.btnStartPayment.text = startPaymentBtnText
 
-        listAdapter = context?.let { CustomExpandableListAdapter() }
+        listAdapter = context?.let { ExpandableOrderListAdapter() }
 
-        listView = binding.listView
+        listView = binding.expandableListView
         listView!!.setAdapter(listAdapter)
     }
 }

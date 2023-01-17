@@ -18,7 +18,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.easysystems.easyorder.activities.MySplashActivity
-import com.easysystems.easyorder.data.ItemDTO
 import com.easysystems.easyorder.data.MolliePaymentDTO
 import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.ActivityMainBinding
@@ -32,7 +31,6 @@ import org.koin.android.ext.android.inject
 class MainActivity : AppCompatActivity() {
 
     private val sharedPreferencesHelper: SharedPreferencesHelper by inject()
-    private lateinit var binding: ActivityMainBinding
 
     companion object {
         var sessionDTO: SessionDTO? = SessionDTO()
@@ -44,7 +42,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
+        val binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -72,8 +71,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
-        setContentView(binding.root)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

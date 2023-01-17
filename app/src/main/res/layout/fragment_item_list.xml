@@ -79,7 +79,7 @@
             tools:ignore="ImageContrastCheck" />
 
         <com.joanzapata.iconify.widget.IconButton
-            android:id="@+id/iconOrdersBadge"
+            android:id="@+id/badgeOrders"
             android:layout_width="35dp"
             android:layout_height="35dp"
             android:layout_marginStart="20dp"

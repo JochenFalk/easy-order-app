@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ExpandableListView
 import android.widget.Toast
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
@@ -85,6 +86,8 @@ class OrderListFragment : Fragment() {
                     "Oeps! Something went wrong loading the orders:(",
                     Toast.LENGTH_SHORT
                 ).show()
+
+                viewModel.dataRefreshError.value = false
             }
         }
 
@@ -97,12 +100,21 @@ class OrderListFragment : Fragment() {
                     "Your order has been cleared :)",
                     Toast.LENGTH_SHORT
                 ).show()
-            } else {
+
+                viewModel.orderIsClearedSuccess.value = false
+            }
+        }
+
+        viewModel.orderIsClearedFailed.observe(viewLifecycleOwner) { boolean ->
+
+            if (boolean) {
                 Toast.makeText(
                     context,
                     "There's nothing to clear here ;)",
                     Toast.LENGTH_SHORT
                 ).show()
+
+                viewModel.orderIsClearedFailed.value = false
             }
         }
 
@@ -123,20 +135,39 @@ class OrderListFragment : Fragment() {
                     "Your order has been sent :)",
                     Toast.LENGTH_SHORT
                 ).show()
-            } else {
+
+                viewModel.orderIsSentSuccess.value = false
+            }
+        }
+
+        viewModel.orderIsSentFailed.observe(viewLifecycleOwner) { boolean ->
+
+            if (boolean) {
                 Toast.makeText(
                     context,
                     "There's nothing to send here ;)",
                     Toast.LENGTH_SHORT
                 ).show()
+
+                viewModel.orderIsSentFailed.value = false
             }
         }
 
         viewModel.updateBottomNavigation.observe(viewLifecycleOwner) { boolean ->
 
             if (boolean) {
-                viewModel.updateBottomNavigation.value = false
                 updateBottomNavigation()
+                viewModel.updateBottomNavigation.value = false
+            }
+        }
+
+        viewModel.isEmptyList.observe(viewLifecycleOwner) { boolean ->
+
+            if (boolean) {
+                binding.expandableListView.isVisible = false
+                requireActivity().supportFragmentManager.popBackStack()
+            } else {
+                binding.expandableListView.isVisible = true
             }
         }
     }
@@ -172,5 +203,10 @@ class OrderListFragment : Fragment() {
             "${resources.getString(R.string.btnCheckout)} (Total: € ${decimal.format(sessionDTO?.total)})"
 
         binding.btnCheckout.text = checkoutBtnText
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateBottomNavigation()
     }
 }

@@ -28,6 +28,8 @@ class ItemListFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var itemAdapter: ItemAdapter
 
+    private var isEmptyList: Boolean = false
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -58,7 +60,15 @@ class ItemListFragment : Fragment() {
         recyclerView.adapter = itemAdapter
 
         binding.btnOrders.setOnClickListener {
-            callOrderListFragment()
+            if (isEmptyList) {
+                callOrderListFragment()
+            } else {
+                Toast.makeText(
+                    requireActivity(),
+                    "Try adding some items to your order first ;)",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
 
         setObservers()
@@ -84,15 +94,21 @@ class ItemListFragment : Fragment() {
                     "Oeps! Something went wrong loading the menu items:(",
                     Toast.LENGTH_SHORT
                 ).show()
+
+                viewModel.dataRetrievalError.value = false
             }
         }
 
         viewModel.updateBottomNavigation.observe(viewLifecycleOwner) { boolean ->
 
             if (boolean) {
-                viewModel.updateBottomNavigation.value = false
                 updateBottomNavigation()
+                viewModel.updateBottomNavigation.value = false
             }
+        }
+
+        viewModel.isEmptyList.observe(viewLifecycleOwner) { boolean ->
+            isEmptyList = boolean
         }
     }
 
@@ -117,5 +133,12 @@ class ItemListFragment : Fragment() {
 
         binding.btnOrders.text = orderBtnText
         binding.badgeOrders.text = count.toString()
+
+        isEmptyList = MainActivity.sessionDTO?.orders?.get(0)?.items?.size !=0
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateBottomNavigation()
     }
 }

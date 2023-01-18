@@ -13,7 +13,6 @@ import java.text.NumberFormat
 class ItemAdapter(private val viewModel: ItemListViewModel) : RecyclerView.Adapter<ItemAdapter.ItemHolder>() {
 
     private lateinit var binding: CardDesignBinding
-
     val itemList = ArrayList<ItemDTO>()
 
     inner class ItemHolder : RecyclerView.ViewHolder(binding.root) {

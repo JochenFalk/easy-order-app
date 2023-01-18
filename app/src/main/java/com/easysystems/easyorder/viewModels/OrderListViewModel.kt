@@ -12,8 +12,11 @@ class OrderListViewModel : ViewModel() {
     var titleList: MutableLiveData<ArrayList<String>> = MutableLiveData()
     var dataRefreshError: MutableLiveData<Boolean> = MutableLiveData()
     var orderIsClearedSuccess: MutableLiveData<Boolean> = MutableLiveData()
+    var orderIsClearedFailed: MutableLiveData<Boolean> = MutableLiveData()
     var orderIsSentSuccess: MutableLiveData<Boolean> = MutableLiveData()
+    var orderIsSentFailed: MutableLiveData<Boolean> = MutableLiveData()
     var updateBottomNavigation: MutableLiveData<Boolean> = MutableLiveData()
+    var isEmptyList: MutableLiveData<Boolean> = MutableLiveData()
 
     init {
         refreshData()
@@ -36,7 +39,7 @@ class OrderListViewModel : ViewModel() {
                     session.total = sessionTotal
                     lastOrder.total = 0.0
                     lastOrder.items?.clear()
-                    lastOrder.status = OrderDTO.Status.CANCELED
+                    lastOrder.status = OrderDTO.Status.OPENED
 
                     this.orderIsClearedSuccess.value = true
                     refreshData()
@@ -44,7 +47,7 @@ class OrderListViewModel : ViewModel() {
                     Log.i("Info", "Order with id ${lastOrder.id} has been cleared")
                 }
             } else {
-                this.orderIsClearedSuccess.value = false
+                this.orderIsClearedFailed.value = true
             }
         }
     }
@@ -63,7 +66,7 @@ class OrderListViewModel : ViewModel() {
 
                 Log.i("Info", "Order with id ${lastOrder.id} has been sent")
             } else {
-                this.orderIsSentSuccess.value = false
+                this.orderIsSentFailed.value = true
             }
         }
     }
@@ -92,6 +95,8 @@ class OrderListViewModel : ViewModel() {
 
             this.dataRefreshError.value = false
             this.updateBottomNavigation.value = true
+
+            this.isEmptyList.value = orders[0].items?.size == 0
 
         } else {
             this.dataRefreshError.value = true

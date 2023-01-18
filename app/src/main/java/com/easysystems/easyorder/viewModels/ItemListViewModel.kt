@@ -15,6 +15,7 @@ class ItemListViewModel : ViewModel() {
     var itemList: MutableLiveData<ArrayList<ItemDTO>> = MutableLiveData()
     var dataRetrievalError: MutableLiveData<Boolean> = MutableLiveData()
     var updateBottomNavigation: MutableLiveData<Boolean> = MutableLiveData()
+    var isEmptyList: MutableLiveData<Boolean> = MutableLiveData()
 
     init {
         retrieveData()
@@ -34,6 +35,7 @@ class ItemListViewModel : ViewModel() {
 
             Log.i("Info", "Item with id ${item.id} added to order ${order.id}")
 
+            this.isEmptyList.value = order.items?.size != 0
             this.updateBottomNavigation.value = true
         }
     }

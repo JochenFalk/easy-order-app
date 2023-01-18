@@ -7,24 +7,29 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.R
 import com.easysystems.easyorder.adapters.ExpandableOrderListAdapter
 import com.easysystems.easyorder.databinding.FragmentPaymentBinding
+import com.easysystems.easyorder.viewModels.OrderListViewModel
 import java.text.DecimalFormat
 import java.text.NumberFormat
 
 class PaymentFragment : Fragment() {
 
     private lateinit var binding: FragmentPaymentBinding
+    private lateinit var viewModel: OrderListViewModel
+    private lateinit var listView: ExpandableListView
+    private lateinit var listAdapter: ExpandableOrderListAdapter
 
-    private var listView: ExpandableListView? = null
-    private var listAdapter: ExpandableListAdapter? = null
+    private lateinit var spinner: Spinner
+    private lateinit var spinnerAdapter: ArrayAdapter<CharSequence>
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
         binding = FragmentPaymentBinding.inflate(inflater, container, false)
 
@@ -43,17 +48,23 @@ class PaymentFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val spinner = binding.spinner.apply { this.setSelection(0, false) }
-        val staticAdapter = ArrayAdapter
+        viewModel = ViewModelProvider(this)[OrderListViewModel::class.java]
+
+        listView = binding.expandableListView
+        listAdapter = activity?.let { ExpandableOrderListAdapter() }!!
+        listView.setAdapter(listAdapter)
+
+        spinner = binding.spinner.apply { this.setSelection(0, false) }
+        spinnerAdapter = ArrayAdapter
             .createFromResource(
                 requireContext(), R.array.payment_methods,
                 R.layout.spinner_item
-            )
-        staticAdapter
-            .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = staticAdapter
-
+            ).apply {
+                this.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+        spinner.adapter = spinnerAdapter
         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+
             override fun onItemSelected(
                 parent: AdapterView<*>, view: View?,
                 position: Int, id: Long
@@ -63,8 +74,8 @@ class PaymentFragment : Fragment() {
 
                 if (methodArray != null) {
 
-                    when (val paymentMethod = parent.getItemAtPosition(position) as String) {
-                        methodArray[0] -> MainActivity.paymentMethod = paymentMethod
+                    when (val method = parent.getItemAtPosition(position) as String) {
+                        methodArray[0] -> MainActivity.paymentMethod = method
                         methodArray[1] -> MainActivity.paymentMethod = "ideal"
                         methodArray[2] -> MainActivity.paymentMethod = "creditcard"
                     }
@@ -79,7 +90,45 @@ class PaymentFragment : Fragment() {
             handlePaymentStatus()
         }
 
-        updateView()
+        setObservers()
+    }
+
+    private fun setObservers() {
+
+        viewModel.orderList.observe(viewLifecycleOwner) { orderList ->
+
+            if (orderList != null) {
+                listAdapter.orderList.clear()
+                listAdapter.orderList.addAll(orderList)
+            }
+        }
+
+        viewModel.titleList.observe(viewLifecycleOwner) { titleList ->
+
+            if (titleList != null) {
+                listAdapter.titleList.clear()
+                listAdapter.titleList.addAll(titleList)
+            }
+        }
+
+        viewModel.dataRefreshError.observe(viewLifecycleOwner) { boolean ->
+
+            if (boolean) {
+                Toast.makeText(
+                    requireActivity(),
+                    "Oeps! Something went wrong loading the orders:(",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        viewModel.updateBottomNavigation.observe(viewLifecycleOwner) { boolean ->
+
+            if (boolean) {
+                viewModel.updateBottomNavigation.value = false
+                updateBottomNavigation()
+            }
+        }
     }
 
     private fun handlePaymentStatus() {
@@ -153,23 +202,13 @@ class PaymentFragment : Fragment() {
         MainActivity.paymentDTO?.getCheckoutIntent { startActivity(it) }
     }
 
-    private fun updateView() {
+    private fun updateBottomNavigation() {
 
         val decimal: NumberFormat = DecimalFormat("0.00")
         val sessionDTO = MainActivity.sessionDTO
-        val sessionTotal = sessionDTO?.total
         val startPaymentBtnText =
-            "${resources.getString(R.string.btnCloseSession)} (Total: € ${
-                decimal.format(
-                    sessionTotal
-                )
-            })"
+            "${resources.getString(R.string.btnCloseSession)} (Total: € ${decimal.format(sessionDTO?.total)})"
 
         binding.btnStartPayment.text = startPaymentBtnText
-
-        listAdapter = context?.let { ExpandableOrderListAdapter() }
-
-        listView = binding.expandableListView
-        listView!!.setAdapter(listAdapter)
     }
 }

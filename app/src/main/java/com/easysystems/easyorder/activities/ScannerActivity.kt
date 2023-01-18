@@ -37,18 +37,21 @@ class ScannerActivity : AppCompatActivity(), ZXingScannerView.ResultHandler {
     }
 
     private fun setPermissions() {
-        val permissions = ContextCompat.checkSelfPermission(this,
-            android.Manifest.permission.CAMERA)
-        if (permissions != PackageManager.PERMISSION_GRANTED)
-        {
+        val permissions = ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.CAMERA
+        )
+        if (permissions != PackageManager.PERMISSION_GRANTED) {
             makeRequest()
         }
     }
 
     private fun makeRequest() {
-        ActivityCompat.requestPermissions(this,
+        ActivityCompat.requestPermissions(
+            this,
             arrayOf(android.Manifest.permission.CAMERA),
-            1)
+            1
+        )
     }
 
     override fun onRequestPermissionsResult(
@@ -58,12 +61,14 @@ class ScannerActivity : AppCompatActivity(), ZXingScannerView.ResultHandler {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-        when(requestCode) {
+        when (requestCode) {
             1 -> {
                 if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED)
-                    Toast.makeText(applicationContext,
+                    Toast.makeText(
+                        applicationContext,
                         "Please accept camera permissions",
-                    Toast.LENGTH_LONG)
+                        Toast.LENGTH_LONG
+                    )
                         .show()
             }
         }

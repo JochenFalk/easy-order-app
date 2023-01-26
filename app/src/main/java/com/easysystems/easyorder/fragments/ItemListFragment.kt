@@ -2,6 +2,7 @@ package com.easysystems.easyorder.fragments
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -50,7 +51,7 @@ class ItemListFragment : Fragment() {
                 }
             })
 
-        viewModel = ViewModelProvider(this)[ItemListViewModel::class.java]
+        viewModel = ViewModelProvider(requireActivity())[ItemListViewModel::class.java]
 
         recyclerView = binding.recyclerView
         itemAdapter = activity.let {
@@ -77,13 +78,14 @@ class ItemListFragment : Fragment() {
     @SuppressLint("NotifyDataSetChanged")
     private fun setObservers() {
 
-        viewModel.itemList.observe(viewLifecycleOwner) { itemList ->
+        viewModel.itemObservableList.observe(viewLifecycleOwner) { itemList ->
 
             if (itemList != null) {
-                itemAdapter.itemList.clear()
-                itemAdapter.itemList.addAll(itemList)
+                itemAdapter.itemList = itemList
                 itemAdapter.notifyDataSetChanged()
             }
+
+            Log.i("Info", "ItemList observed. size: ${itemList.size}")
         }
 
         viewModel.dataRetrievalError.observe(viewLifecycleOwner) { boolean ->
@@ -134,7 +136,7 @@ class ItemListFragment : Fragment() {
         binding.btnOrders.text = orderBtnText
         binding.badgeOrders.text = count.toString()
 
-        isEmptyList = MainActivity.sessionDTO?.orders?.get(0)?.items?.size !=0
+        isEmptyList = MainActivity.sessionDTO?.orders?.get(0)?.items?.size != 0
     }
 
     override fun onResume() {

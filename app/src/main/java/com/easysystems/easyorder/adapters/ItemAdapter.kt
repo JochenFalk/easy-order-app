@@ -2,47 +2,38 @@ package com.easysystems.easyorder.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.Button
 import androidx.recyclerview.widget.RecyclerView
-import com.easysystems.easyorder.data.ItemDTO
 import com.easysystems.easyorder.databinding.CardDesignBinding
 import com.easysystems.easyorder.viewModels.ItemListViewModel
-import java.text.DecimalFormat
-import java.text.NumberFormat
+import com.easysystems.easyorder.viewModels.ItemListViewModel.ItemObservable
 
-class ItemAdapter(private val viewModel: ItemListViewModel) : RecyclerView.Adapter<ItemAdapter.ItemHolder>() {
+class ItemAdapter(private val viewModel: ItemListViewModel) :
+    RecyclerView.Adapter<ItemAdapter.ItemHolder>() {
 
-    private lateinit var binding: CardDesignBinding
-    val itemList = ArrayList<ItemDTO>()
+    var itemList = ArrayList<ItemObservable>()
 
-    inner class ItemHolder : RecyclerView.ViewHolder(binding.root) {
+    inner class ItemHolder(private val binding: CardDesignBinding) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: ItemDTO) {
+        fun bind(itemObservable: ItemObservable?) {
 
-            val decimal: NumberFormat = DecimalFormat("0.00")
-            val priceAsString = "€ ${decimal.format(item.price)}"
+            if (itemObservable != null) {
 
-            binding.cardViewName.text = item.name
-            binding.cardViewPrice.text = priceAsString
+                binding.itemObservable = itemObservable
+
+                binding.btnAdd.setOnClickListener {
+                    viewModel.addItem(itemObservable)
+                }
+            }
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemHolder {
-
-        binding = CardDesignBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ItemHolder()
+        val binding = CardDesignBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return ItemHolder(binding)
     }
 
     override fun onBindViewHolder(holder: ItemHolder, position: Int) {
-
-        val item: ItemDTO = itemList[position]
-        holder.bind(item)
-
-        binding.btnAdd.setOnClickListener {
-            viewModel.addItem(item)
-        }
-
-        viewModel.updateBottomNavigation.value = true
+        holder.bind(itemList[position])
     }
 
     override fun getItemCount(): Int {

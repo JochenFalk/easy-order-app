@@ -12,7 +12,7 @@ import com.easysystems.easyorder.databinding.ListItemBinding
 import java.text.DecimalFormat
 import java.text.NumberFormat
 
-class ExpandableOrderListAdapter : BaseExpandableListAdapter() {
+class OrderListAdapter : BaseExpandableListAdapter() {
 
     val titleList = ArrayList<String>()
     val orderList = ArrayList<OrderDTO>()
@@ -71,11 +71,11 @@ class ExpandableOrderListAdapter : BaseExpandableListAdapter() {
 
         val binding = ListGroupBinding.inflate(LayoutInflater.from(parent.context), parent, false)
 
-        binding.listTitle.text = title
-        binding.listTotal.text = totalAsString
-        binding.listStatus.text = order.status.toString()
+        binding.titleText.text = title
+        binding.orderTotal.text = totalAsString
+        binding.orderStatus.text = order.status.toString()
 
-        binding.listTitle.setTypeface(null, Typeface.BOLD)
+        binding.titleText.setTypeface(null, Typeface.BOLD)
 
         return binding.root
     }

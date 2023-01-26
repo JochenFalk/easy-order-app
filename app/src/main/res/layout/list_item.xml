@@ -1,26 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:paddingLeft="40dp">
+    android:orientation="horizontal">
 
     <TextView
         android:id="@+id/itemName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="50dp"
         android:layout_weight="1"
-        android:padding="10dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
         tools:layout_editor_absoluteX="60dp" />
 
     <TextView
         android:id="@+id/itemPrice"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1.35"
-        android:padding="10dp"
+        android:layout_weight="1.6"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
         tools:layout_editor_absoluteX="237dp" />
 
 </LinearLayout>

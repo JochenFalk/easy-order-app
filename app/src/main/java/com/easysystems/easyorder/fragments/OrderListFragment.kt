@@ -13,7 +13,7 @@ import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.ViewModelProvider
 import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.R
-import com.easysystems.easyorder.adapters.ExpandableOrderListAdapter
+import com.easysystems.easyorder.adapters.OrderListAdapter
 import com.easysystems.easyorder.data.OrderDTO
 import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.FragmentOrdersBinding
@@ -26,7 +26,7 @@ class OrderListFragment : Fragment() {
     private lateinit var binding: FragmentOrdersBinding
     private lateinit var viewModel: OrderListViewModel
     private lateinit var listView: ExpandableListView
-    private lateinit var listAdapter: ExpandableOrderListAdapter
+    private lateinit var listAdapter: OrderListAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -42,7 +42,7 @@ class OrderListFragment : Fragment() {
         viewModel = ViewModelProvider(this)[OrderListViewModel::class.java]
 
         listView = binding.expandableListView
-        listAdapter = activity?.let { ExpandableOrderListAdapter() }!!
+        listAdapter = activity?.let { OrderListAdapter() }!!
         listView.setAdapter(listAdapter)
 
         binding.btnClear.setOnClickListener {

@@ -10,7 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.R
-import com.easysystems.easyorder.adapters.ExpandableOrderListAdapter
+import com.easysystems.easyorder.adapters.OrderListAdapter
 import com.easysystems.easyorder.databinding.FragmentPaymentBinding
 import com.easysystems.easyorder.viewModels.OrderListViewModel
 import java.text.DecimalFormat
@@ -21,7 +21,7 @@ class PaymentFragment : Fragment() {
     private lateinit var binding: FragmentPaymentBinding
     private lateinit var viewModel: OrderListViewModel
     private lateinit var listView: ExpandableListView
-    private lateinit var listAdapter: ExpandableOrderListAdapter
+    private lateinit var listAdapter: OrderListAdapter
 
     private lateinit var spinner: Spinner
     private lateinit var spinnerAdapter: ArrayAdapter<CharSequence>
@@ -51,7 +51,7 @@ class PaymentFragment : Fragment() {
         viewModel = ViewModelProvider(this)[OrderListViewModel::class.java]
 
         listView = binding.expandableListView
-        listAdapter = activity?.let { ExpandableOrderListAdapter() }!!
+        listAdapter = activity?.let { OrderListAdapter() }!!
         listView.setAdapter(listAdapter)
 
         spinner = binding.spinner.apply { this.setSelection(0, false) }

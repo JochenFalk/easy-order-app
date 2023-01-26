@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.R
-import com.easysystems.easyorder.adapters.ItemAdapter
+import com.easysystems.easyorder.adapters.ItemListAdapter
 import com.easysystems.easyorder.databinding.FragmentItemListBinding
 import com.easysystems.easyorder.viewModels.ItemListViewModel
 import java.text.DecimalFormat
@@ -27,7 +27,7 @@ class ItemListFragment : Fragment() {
     private lateinit var binding: FragmentItemListBinding
     private lateinit var viewModel: ItemListViewModel
     private lateinit var recyclerView: RecyclerView
-    private lateinit var itemAdapter: ItemAdapter
+    private lateinit var itemListAdapter: ItemListAdapter
 
     private var isEmptyList: Boolean = false
 
@@ -54,11 +54,11 @@ class ItemListFragment : Fragment() {
         viewModel = ViewModelProvider(requireActivity())[ItemListViewModel::class.java]
 
         recyclerView = binding.recyclerView
-        itemAdapter = activity.let {
+        itemListAdapter = activity.let {
             recyclerView.layoutManager = LinearLayoutManager(it)
-            ItemAdapter(viewModel)
+            ItemListAdapter(viewModel)
         }
-        recyclerView.adapter = itemAdapter
+        recyclerView.adapter = itemListAdapter
 
         binding.btnOrders.setOnClickListener {
             if (isEmptyList) {
@@ -81,11 +81,9 @@ class ItemListFragment : Fragment() {
         viewModel.itemObservableList.observe(viewLifecycleOwner) { itemList ->
 
             if (itemList != null) {
-                itemAdapter.itemList = itemList
-                itemAdapter.notifyDataSetChanged()
+                itemListAdapter.itemList = itemList
+                itemListAdapter.notifyDataSetChanged()
             }
-
-            Log.i("Info", "ItemList observed. size: ${itemList.size}")
         }
 
         viewModel.dataRetrievalError.observe(viewLifecycleOwner) { boolean ->

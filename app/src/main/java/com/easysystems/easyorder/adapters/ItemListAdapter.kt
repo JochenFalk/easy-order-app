@@ -7,8 +7,8 @@ import com.easysystems.easyorder.databinding.CardDesignBinding
 import com.easysystems.easyorder.viewModels.ItemListViewModel
 import com.easysystems.easyorder.viewModels.ItemListViewModel.ItemObservable
 
-class ItemAdapter(private val viewModel: ItemListViewModel) :
-    RecyclerView.Adapter<ItemAdapter.ItemHolder>() {
+class ItemListAdapter(private val viewModel: ItemListViewModel) :
+    RecyclerView.Adapter<ItemListAdapter.ItemHolder>() {
 
     var itemList = ArrayList<ItemObservable>()
 

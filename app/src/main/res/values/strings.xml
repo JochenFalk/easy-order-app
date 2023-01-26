@@ -4,6 +4,9 @@
     <string name="btnOrders">Manage your orders</string>
     <string name="btnCheckout">Go to checkout</string>
     <string name="btnCloseSession">Click here to pay</string>
+    <string name="titleText">Title</string>
+    <string name="totalText">Total</string>
+    <string name="statusText">Status</string>
     <string-array name="payment_methods">
         <item>Select payment option</item>
         <item>Ideal</item>

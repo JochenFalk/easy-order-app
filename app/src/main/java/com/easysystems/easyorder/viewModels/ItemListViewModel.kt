@@ -1,13 +1,11 @@
 package com.easysystems.easyorder.viewModels
 
-import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.easysystems.easyorder.MainActivity
-import com.easysystems.easyorder.R
 import com.easysystems.easyorder.data.ItemDTO
-import com.easysystems.easyorder.helpclasses.StringResourcesProvider
+import com.easysystems.easyorder.data.ItemObservable
 import com.easysystems.easyorder.repositories.ItemRepository
 import org.koin.java.KoinJavaComponent.inject
 import java.text.DecimalFormat
@@ -16,8 +14,6 @@ import java.text.NumberFormat
 class ItemListViewModel : ViewModel() {
 
     private val itemRepository: ItemRepository by inject(ItemRepository::class.java)
-    private val stringResourcesProvider: StringResourcesProvider by inject(StringResourcesProvider::class.java)
-
     private var itemList: ArrayList<ItemDTO> = ArrayList()
 
     var itemObservableList: MutableLiveData<ArrayList<ItemObservable>> = MutableLiveData()
@@ -28,19 +24,6 @@ class ItemListViewModel : ViewModel() {
     init {
         retrieveData()
         updateBottomNavigation.value = true
-    }
-
-    inner class ItemObservable {
-
-        var id: Int? = null
-        var name: String? = null
-        var image: Drawable? = null
-        var category: String? = null
-        var price: String? = null
-
-        init {
-            image = stringResourcesProvider.getDrawable(R.drawable.ic_launcher_foreground)
-        }
     }
 
     fun addItem(itemObservable: ItemObservable) {

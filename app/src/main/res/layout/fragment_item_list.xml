@@ -43,26 +43,26 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-    <Button
-        android:id="@+id/btnOrders"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="start|center_vertical"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        android:paddingStart="60dp"
-        android:paddingEnd="0dp"
-        android:stateListAnimator="@null"
-        android:text="@string/btnOrders"
-        android:textAllCaps="false"
-        android:visibility="visible"
-        app:cornerRadius="0dp"
-        app:iconPadding="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:ignore="TextContrastCheck,TouchTargetSizeCheck" />
+        <Button
+            android:id="@+id/btnOrders"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="start|center_vertical"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="60dp"
+            android:paddingEnd="0dp"
+            android:stateListAnimator="@null"
+            android:text="@string/btnOrders"
+            android:textAllCaps="false"
+            android:visibility="visible"
+            app:cornerRadius="0dp"
+            app:iconPadding="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="TextContrastCheck,TouchTargetSizeCheck" />
 
         <ImageView
             android:id="@+id/iconOrders"
@@ -87,6 +87,7 @@
             android:elevation="10dp"
             android:textColor="@color/white"
             android:visibility="visible"
+            android:text="0"
             app:layout_constraintBottom_toBottomOf="@id/bottomGroup"
             app:layout_constraintStart_toStartOf="@+id/bottomGroup"
             tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />

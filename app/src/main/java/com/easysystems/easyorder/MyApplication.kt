@@ -3,6 +3,7 @@ package com.easysystems.easyorder
 import android.app.Application
 import com.easysystems.easyorder.koin.koinHelpers
 import com.easysystems.easyorder.koin.koinRepos
+import com.easysystems.easyorder.koin.koinViews
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext.startKoin
 
@@ -14,6 +15,7 @@ class MyApplication : Application() {
             androidContext(applicationContext)
             modules(
                 koinRepos,
+                koinViews,
                 koinHelpers
             )
         }

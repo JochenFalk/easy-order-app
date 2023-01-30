@@ -4,12 +4,16 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.easysystems.easyorder.MainActivity
+import com.easysystems.easyorder.data.ItemDTO
+import com.easysystems.easyorder.data.ItemObservable
 import com.easysystems.easyorder.data.OrderDTO
+import com.easysystems.easyorder.data.OrderObservable
+import java.text.DecimalFormat
+import java.text.NumberFormat
 
 class OrderListViewModel : ViewModel() {
 
-    var orderList: MutableLiveData<ArrayList<OrderDTO>> = MutableLiveData()
-    var titleList: MutableLiveData<ArrayList<String>> = MutableLiveData()
+    var orderObservableList: MutableLiveData<ArrayList<OrderObservable>> = MutableLiveData()
     var dataRefreshError: MutableLiveData<Boolean> = MutableLiveData()
     var orderIsClearedSuccess: MutableLiveData<Boolean> = MutableLiveData()
     var orderIsClearedFailed: MutableLiveData<Boolean> = MutableLiveData()
@@ -71,33 +75,62 @@ class OrderListViewModel : ViewModel() {
         }
     }
 
-    private fun refreshData() {
+    fun refreshData() {
 
         var count = 0
         val orders = MainActivity.sessionDTO?.orders
-        val titles = ArrayList<String>()
+        val newOrderList: ArrayList<OrderObservable> = ArrayList()
 
         if (orders != null || orders?.size == 0) {
 
-            this.titleList.value?.clear()
-
-            orders.sortBy { it.id }
             orders.forEach { order ->
 
                 if ((order.items?.size != 0) && (order.total != 0.0)) {
+
+                    val items: ArrayList<ItemDTO>? = order.items
+                    val newItemList: ArrayList<ItemObservable> = ArrayList()
+
+                    val orderObservable = OrderObservable()
+                    val decimal: NumberFormat = DecimalFormat("0.00")
+                    val totalAsString = "€ ${decimal.format(order.total)}"
+
                     count++
-                    titles.add("Order $count")
+
+                    orderObservable.id = order.id
+                    orderObservable.status = order.status.toString()
+
+                    items?.forEach { item ->
+
+                        val itemObservable = ItemObservable()
+                        val priceAsString = "€ ${decimal.format(item.price)}"
+
+                        itemObservable.id = item.id
+                        itemObservable.name = item.name
+                        itemObservable.category = item.category.toString()
+                        itemObservable.price = priceAsString
+
+                        newItemList.add(itemObservable)
+                        newOrderList.sortBy { it.id }
+                    }
+
+                    orderObservable.items = newItemList
+                    orderObservable.total = totalAsString
+                    orderObservable.sessionId = order.sessionId
+                    orderObservable.title = "Order $count"
+
+                    newOrderList.add(orderObservable)
+                    newOrderList.sortBy { it.id }
                 }
             }
 
-            this.titleList.value = titles
-            this.orderList.value = orders
+            if (newOrderList.size != 0) {
+                this.isEmptyList.value = newOrderList[0].items.size == 0
+            } else {
+                this.isEmptyList.value = true
+            }
 
-            this.dataRefreshError.value = false
+            this.orderObservableList.value = newOrderList
             this.updateBottomNavigation.value = true
-
-            this.isEmptyList.value = orders[0].items?.size == 0
-
         } else {
             this.dataRefreshError.value = true
         }

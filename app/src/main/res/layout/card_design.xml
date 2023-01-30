@@ -7,7 +7,7 @@
 
         <variable
             name="itemObservable"
-            type="com.easysystems.easyorder.viewModels.ItemListViewModel.ItemObservable" />
+            type="com.easysystems.easyorder.data.ItemObservable" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

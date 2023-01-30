@@ -10,7 +10,6 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
-import androidx.lifecycle.ViewModelProvider
 import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.R
 import com.easysystems.easyorder.adapters.OrderListAdapter
@@ -18,15 +17,17 @@ import com.easysystems.easyorder.data.OrderDTO
 import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.FragmentOrdersBinding
 import com.easysystems.easyorder.viewModels.OrderListViewModel
+import org.koin.android.ext.android.inject
 import java.text.DecimalFormat
 import java.text.NumberFormat
 
 class OrderListFragment : Fragment() {
 
     private lateinit var binding: FragmentOrdersBinding
-    private lateinit var viewModel: OrderListViewModel
     private lateinit var listView: ExpandableListView
-    private lateinit var listAdapter: OrderListAdapter
+
+    private val viewModel: OrderListViewModel by inject()
+    private val orderListAdapter: OrderListAdapter by inject()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -39,11 +40,8 @@ class OrderListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel = ViewModelProvider(this)[OrderListViewModel::class.java]
-
         listView = binding.expandableListView
-        listAdapter = activity?.let { OrderListAdapter() }!!
-        listView.setAdapter(listAdapter)
+        listView.setAdapter(orderListAdapter)
 
         binding.btnClear.setOnClickListener {
             viewModel.clearOrder()
@@ -62,19 +60,11 @@ class OrderListFragment : Fragment() {
 
     private fun setObservers() {
 
-        viewModel.orderList.observe(viewLifecycleOwner) { orderList ->
+        viewModel.orderObservableList.observe(viewLifecycleOwner) { orderList ->
 
             if (orderList != null) {
-                listAdapter.orderList.clear()
-                listAdapter.orderList.addAll(orderList)
-            }
-        }
-
-        viewModel.titleList.observe(viewLifecycleOwner) { titleList ->
-
-            if (titleList != null) {
-                listAdapter.titleList.clear()
-                listAdapter.titleList.addAll(titleList)
+                orderListAdapter.orderList.clear()
+                orderListAdapter.orderList.addAll(orderList)
             }
         }
 
@@ -94,7 +84,7 @@ class OrderListFragment : Fragment() {
         viewModel.orderIsClearedSuccess.observe(viewLifecycleOwner) { boolean ->
 
             if (boolean) {
-                listAdapter.notifyDataSetChanged()
+                orderListAdapter.notifyDataSetChanged()
                 Toast.makeText(
                     context,
                     "Your order has been cleared :)",
@@ -121,7 +111,7 @@ class OrderListFragment : Fragment() {
         viewModel.orderIsSentSuccess.observe(viewLifecycleOwner) { boolean ->
 
             if (boolean) {
-                listAdapter.notifyDataSetChanged()
+                orderListAdapter.notifyDataSetChanged()
                 val session = MainActivity.sessionDTO
                 session?.orders?.let {
                     session.addNewOrderToSession {
@@ -207,6 +197,6 @@ class OrderListFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        updateBottomNavigation()
+        viewModel.refreshData()
     }
 }

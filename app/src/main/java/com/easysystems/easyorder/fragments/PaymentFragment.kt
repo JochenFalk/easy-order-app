@@ -7,24 +7,25 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
 import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.R
 import com.easysystems.easyorder.adapters.OrderListAdapter
 import com.easysystems.easyorder.databinding.FragmentPaymentBinding
 import com.easysystems.easyorder.viewModels.OrderListViewModel
+import org.koin.android.ext.android.inject
 import java.text.DecimalFormat
 import java.text.NumberFormat
 
 class PaymentFragment : Fragment() {
 
     private lateinit var binding: FragmentPaymentBinding
-    private lateinit var viewModel: OrderListViewModel
     private lateinit var listView: ExpandableListView
-    private lateinit var listAdapter: OrderListAdapter
 
     private lateinit var spinner: Spinner
     private lateinit var spinnerAdapter: ArrayAdapter<CharSequence>
+
+    private val viewModel: OrderListViewModel by inject()
+    private val orderListAdapter: OrderListAdapter by inject()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -48,11 +49,8 @@ class PaymentFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel = ViewModelProvider(this)[OrderListViewModel::class.java]
-
         listView = binding.expandableListView
-        listAdapter = activity?.let { OrderListAdapter() }!!
-        listView.setAdapter(listAdapter)
+        listView.setAdapter(orderListAdapter)
 
         spinner = binding.spinner.apply { this.setSelection(0, false) }
         spinnerAdapter = ArrayAdapter
@@ -95,19 +93,11 @@ class PaymentFragment : Fragment() {
 
     private fun setObservers() {
 
-        viewModel.orderList.observe(viewLifecycleOwner) { orderList ->
+        viewModel.orderObservableList.observe(viewLifecycleOwner) { orderList ->
 
             if (orderList != null) {
-                listAdapter.orderList.clear()
-                listAdapter.orderList.addAll(orderList)
-            }
-        }
-
-        viewModel.titleList.observe(viewLifecycleOwner) { titleList ->
-
-            if (titleList != null) {
-                listAdapter.titleList.clear()
-                listAdapter.titleList.addAll(titleList)
+                orderListAdapter.orderList.clear()
+                orderListAdapter.orderList.addAll(orderList)
             }
         }
 
@@ -210,5 +200,10 @@ class PaymentFragment : Fragment() {
             "${resources.getString(R.string.btnCloseSession)} (Total: € ${decimal.format(sessionDTO?.total)})"
 
         binding.btnStartPayment.text = startPaymentBtnText
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshData()
     }
 }

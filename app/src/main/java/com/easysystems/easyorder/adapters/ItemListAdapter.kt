@@ -3,9 +3,9 @@ package com.easysystems.easyorder.adapters
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.easysystems.easyorder.data.ItemObservable
 import com.easysystems.easyorder.databinding.CardDesignBinding
 import com.easysystems.easyorder.viewModels.ItemListViewModel
-import com.easysystems.easyorder.viewModels.ItemListViewModel.ItemObservable
 
 class ItemListAdapter(private val viewModel: ItemListViewModel) :
     RecyclerView.Adapter<ItemListAdapter.ItemHolder>() {
@@ -17,9 +17,7 @@ class ItemListAdapter(private val viewModel: ItemListViewModel) :
         fun bind(itemObservable: ItemObservable?) {
 
             if (itemObservable != null) {
-
                 binding.itemObservable = itemObservable
-
                 binding.btnAdd.setOnClickListener {
                     viewModel.addItem(itemObservable)
                 }

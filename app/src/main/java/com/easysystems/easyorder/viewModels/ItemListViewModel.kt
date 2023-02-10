@@ -1,11 +1,14 @@
 package com.easysystems.easyorder.viewModels
 
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.easysystems.easyorder.MainActivity
+import com.easysystems.easyorder.R
 import com.easysystems.easyorder.data.ItemDTO
 import com.easysystems.easyorder.data.ItemObservable
+import com.easysystems.easyorder.helpclasses.StringResourcesProvider
 import com.easysystems.easyorder.repositories.ItemRepository
 import org.koin.java.KoinJavaComponent.inject
 import java.text.DecimalFormat
@@ -13,17 +16,23 @@ import java.text.NumberFormat
 
 class ItemListViewModel : ViewModel() {
 
+    private val stringResourcesProvider: StringResourcesProvider by inject(StringResourcesProvider::class.java)
     private val itemRepository: ItemRepository by inject(ItemRepository::class.java)
+
     private var itemList: ArrayList<ItemDTO> = ArrayList()
 
+    var itemObservable: MutableLiveData<ItemObservable> = MutableLiveData()
     var itemObservableList: MutableLiveData<ArrayList<ItemObservable>> = MutableLiveData()
     var dataRetrievalError: MutableLiveData<Boolean> = MutableLiveData()
     var updateBottomNavigation: MutableLiveData<Boolean> = MutableLiveData()
     var isEmptyList: MutableLiveData<Boolean> = MutableLiveData()
 
+    var valuta: String = stringResourcesProvider.getString(R.string.default_valuta)
+    var isEditMode: Boolean = false
+
     init {
+        this.updateBottomNavigation.value = true
         retrieveData()
-        updateBottomNavigation.value = true
     }
 
     fun addItem(itemObservable: ItemObservable) {
@@ -50,6 +59,27 @@ class ItemListViewModel : ViewModel() {
         }
     }
 
+    fun updateItemList(itemObservable: ItemObservable) {
+
+        val newItemList = ArrayList<ItemObservable>().apply {
+            itemObservableList.value?.let { this.addAll(it) }
+        }
+        val item = newItemList.find { item -> item.id == itemObservable.id }
+        val decimal: NumberFormat = DecimalFormat("0.00")
+        val priceFiltered = itemObservable.price?.replace(",", ".")
+        val priceAsString = "${decimal.format(priceFiltered?.toDouble())}"
+
+        if (item != null) {
+            item.name = itemObservable.name
+            item.image = itemObservable.image
+            item.category = itemObservable.category
+            item.price = priceAsString
+            item.description = itemObservable.description
+        }
+
+        this.itemObservableList.value = newItemList
+    }
+
     private fun retrieveData() {
 
         itemRepository.retrieveItems { items ->
@@ -62,12 +92,16 @@ class ItemListViewModel : ViewModel() {
 
                     val itemObservable = ItemObservable()
                     val decimal: NumberFormat = DecimalFormat("0.00")
-                    val priceAsString = "€ ${decimal.format(item.price)}"
+                    val priceAsString = "${decimal.format(item.price)}"
+                    val description = item.description ?: stringResourcesProvider.getString(R.string.cat_ipsum_dolor)
 
                     itemObservable.id = item.id
                     itemObservable.name = item.name
+                    itemObservable.image =
+                        stringResourcesProvider.getDrawable(R.drawable.default_image)
                     itemObservable.category = item.category.toString()
                     itemObservable.price = priceAsString
+                    itemObservable.description = description
 
                     newItemList.add(itemObservable)
                     newItemList.sortBy { it.id }

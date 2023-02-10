@@ -22,9 +22,6 @@
         android:theme="@style/Theme.EasyOrder"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".activities.MySplashActivity"
-            android:exported="false" />
-        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
@@ -43,6 +40,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".activities.MySplashActivity"
+            android:exported="false" />
         <activity
             android:name=".activities.ScannerActivity"
             android:exported="true"

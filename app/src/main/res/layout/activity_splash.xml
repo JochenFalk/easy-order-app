@@ -52,7 +52,7 @@
         android:paddingStart="60dp"
         android:paddingEnd="0dp"
         android:stateListAnimator="@null"
-        android:text="@string/btnScan"
+        android:text="@string/btn_scan"
         android:textAllCaps="false"
         android:visibility="visible"
         app:cornerRadius="0dp"

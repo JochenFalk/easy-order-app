@@ -6,6 +6,10 @@
     <data>
 
         <variable
+            name="viewModel"
+            type="com.easysystems.easyorder.viewModels.ItemListViewModel" />
+
+        <variable
             name="itemObservable"
             type="com.easysystems.easyorder.data.ItemObservable" />
     </data>
@@ -26,8 +30,8 @@
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:background="@drawable/layout_border_transparent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_border_transparent_background"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.5"
                 app:layout_constraintStart_toStartOf="parent">
@@ -37,7 +41,7 @@
                     android:layout_width="75dp"
                     android:layout_height="75dp"
                     android:layout_gravity="center_vertical"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="15dp"
                     android:src="@{itemObservable.image}"
                     app:civ_border_color="@color/black"
                     app:civ_border_width="2dp"
@@ -48,65 +52,109 @@
 
                 <TextView
                     android:id="@+id/cardViewName"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="30dp"
+                    android:layout_marginStart="15dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginEnd="15dp"
+                    android:layout_marginBottom="5dp"
                     android:text="@{itemObservable.name}"
                     android:textColor="@color/black"
                     android:textSize="20sp"
-                    app:layout_constraintBottom_toTopOf="@+id/cardViewPrice"
+                    app:layout_constraintBottom_toTopOf="@+id/cardViewDescription"
+                    app:layout_constraintEnd_toStartOf="@+id/btnOuterHolder"
                     app:layout_constraintStart_toEndOf="@+id/cardViewImage"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
-                    android:id="@+id/cardViewPrice"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/cardViewDescription"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="30dp"
-                    android:text="@{itemObservable.price}"
+                    android:layout_marginStart="15dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginEnd="15dp"
+                    android:layout_marginBottom="5dp"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:text="@{itemObservable.description}"
                     android:textColor="@color/black"
-                    app:layout_constraintBottom_toBottomOf="parent"
+                    android:textSize="15sp"
+                    app:layout_constraintBottom_toTopOf="@id/cardViewPrice"
+                    app:layout_constraintEnd_toStartOf="@+id/btnOuterHolder"
                     app:layout_constraintStart_toEndOf="@+id/cardViewImage"
                     app:layout_constraintTop_toBottomOf="@+id/cardViewName" />
 
+                <TextView
+                    android:id="@+id/textViewValuta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="15dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginEnd="2.5dp"
+                    android:layout_marginBottom="10dp"
+                    android:text="@{viewModel.valuta}"
+                    android:textColor="@color/teal3"
+                    android:textSize="20sp"
+                    android:textStyle="normal"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/cardViewPrice"
+                    app:layout_constraintStart_toEndOf="@+id/cardViewImage"
+                    app:layout_constraintTop_toBottomOf="@+id/cardViewDescription" />
+
+                <TextView
+                    android:id="@+id/cardViewPrice"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2.5dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginEnd="15dp"
+                    android:layout_marginBottom="10dp"
+                    android:text="@{itemObservable.price}"
+                    android:textColor="@color/teal3"
+                    android:textSize="20sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/btnOuterHolder"
+                    app:layout_constraintStart_toEndOf="@+id/textViewValuta"
+                    app:layout_constraintTop_toBottomOf="@+id/cardViewDescription" />
+
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/btnOuterHolder"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
-                    android:layout_marginEnd="45dp"
-                    app:cardBackgroundColor="@color/black"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginEnd="10dp"
                     app:cardCornerRadius="250dp"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent">
 
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="45dp"
-                        android:layout_height="45dp"
-                        android:layout_gravity="center"
-                        app:cardBackgroundColor="@android:color/transparent"
-                        app:cardCornerRadius="250dp">
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAdd"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:insetLeft="-11dp"
+                        android:insetTop="6dp"
+                        android:background="@drawable/round_button_with_border"
+                        android:foreground="?android:attr/selectableItemBackground"
+                        app:icon="@drawable/ic_baseline_add_24"
+                        app:iconSize="38dp"
+                        app:iconTint="@color/teal2"
+                        tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck" />
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnAdd"
-                            style="@style/Widget.MaterialComponents.Button.Icon"
-                            android:layout_width="45dp"
-                            android:layout_height="45dp"
-                            android:insetLeft="-12dp"
-                            android:insetTop="0dp"
-                            android:insetRight="0dp"
-                            android:insetBottom="0dp"
-                            app:icon="@drawable/ic_baseline_add_24"
-                            app:iconGravity="start"
-                            app:iconPadding="0dp"
-                            app:iconSize="45dp"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintStart_toEndOf="@+id/cardViewImage"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MyApp.Button.Rounded"
-                            tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnEdit"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:insetLeft="-3dp"
+                        android:insetTop="6dp"
+                        android:background="@drawable/round_button_with_border"
+                        android:foreground="?android:attr/selectableItemBackground"
+                        app:icon="@drawable/ic_baseline_edit_24"
+                        app:iconSize="23dp"
+                        app:iconTint="@color/teal2"
+                        android:visibility="invisible"
+                        tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck" />
 
-                    </androidx.cardview.widget.CardView>
 
                 </androidx.cardview.widget.CardView>
 

@@ -20,7 +20,6 @@ class PaymentFragment : Fragment() {
 
     private lateinit var binding: FragmentPaymentBinding
     private lateinit var listView: ExpandableListView
-
     private lateinit var spinner: Spinner
     private lateinit var spinnerAdapter: ArrayAdapter<CharSequence>
 
@@ -197,7 +196,7 @@ class PaymentFragment : Fragment() {
         val decimal: NumberFormat = DecimalFormat("0.00")
         val sessionDTO = MainActivity.sessionDTO
         val startPaymentBtnText =
-            "${resources.getString(R.string.btnCloseSession)} (Total: € ${decimal.format(sessionDTO?.total)})"
+            "${resources.getString(R.string.btn_close_session)} (Total: € ${decimal.format(sessionDTO?.total)})"
 
         binding.btnStartPayment.text = startPaymentBtnText
     }

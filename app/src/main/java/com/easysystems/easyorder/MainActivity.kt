@@ -9,29 +9,31 @@ import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.easysystems.easyorder.activities.MySplashActivity
 import com.easysystems.easyorder.data.MolliePaymentDTO
 import com.easysystems.easyorder.data.SessionDTO
 import com.easysystems.easyorder.databinding.ActivityMainBinding
-import com.easysystems.easyorder.fragments.ItemListFragment
-import com.easysystems.easyorder.fragments.OrderListFragment
-import com.easysystems.easyorder.fragments.PaymentFragment
+import com.easysystems.easyorder.fragments.*
 import com.easysystems.easyorder.helpclasses.AppSettings
 import com.easysystems.easyorder.helpclasses.SharedPreferencesHelper
 import org.koin.android.ext.android.inject
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
     private val sharedPreferencesHelper: SharedPreferencesHelper by inject()
+    private var lastFragment: Fragment = Fragment()
+
+    private lateinit var binding: ActivityMainBinding
 
     companion object {
         var sessionDTO: SessionDTO? = SessionDTO()
@@ -70,6 +72,14 @@ class MainActivity : AppCompatActivity() {
                     supportActionBar?.title = "Payment"
                     supportActionBar?.setDisplayHomeAsUpEnabled(true)
                 }
+                is EditItemFragment -> {
+                    supportActionBar?.title = ""
+                    supportActionBar?.setDisplayHomeAsUpEnabled(true)
+                }
+                is FocusItemFragment -> {
+                    supportActionBar?.title = ""
+                    supportActionBar?.setDisplayHomeAsUpEnabled(true)
+                }
             }
         }
     }
@@ -81,6 +91,10 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         }
+        return super.onOptionsItemSelected(item)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         return true
     }
 
@@ -98,6 +112,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+
+        try {
+            lastFragment = supportFragmentManager.fragments.last()
+        } catch (e: Exception) {
+
+        }
+
 
         sessionDTO?.updateSession { sessionDTO ->
 
@@ -124,24 +145,32 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        if (!isAppLoaded) {
-            checkWifiConnection()
-        } else {
+        try {
+            if (lastFragment.id != 0) {
+                callLastFragment()
+            } else {
+                if (!isAppLoaded) {
+                    checkWifiConnection()
+                } else {
 
-            sharedPreferencesHelper
-                .retrievePreferences(
-                    this,
-                    "sessionData",
-                    "sessionId",
-                    "INT"
-                ).let { sessionId ->
+                    sharedPreferencesHelper
+                        .retrievePreferences(
+                            this,
+                            "sessionData",
+                            "sessionId",
+                            "INT"
+                        ).let { sessionId ->
 
-                    if (sessionId as Int == 0) {
-                        callSplashActivity()
-                    } else {
-                        handleSessionState()
-                    }
+                            if (sessionId as Int == 0) {
+                                callSplashActivity()
+                            } else {
+                                handleSessionState()
+                            }
+                        }
                 }
+            }
+        } catch (e: Exception) {
+            Log.i("Info", "No fragment to restore found: $e")
         }
     }
 
@@ -156,7 +185,20 @@ class MainActivity : AppCompatActivity() {
         val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
         val itemListFragment = ItemListFragment()
 
+        val bundle = Bundle()
+        bundle.putBoolean("isEditMode", false)
+        itemListFragment.arguments = bundle
+
         fragmentTransaction.replace(R.id.frame, itemListFragment).addToBackStack(null)
+        fragmentTransaction.commit()
+    }
+
+    private fun callLastFragment() {
+
+        val fragmentManager: FragmentManager = supportFragmentManager
+        val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
+
+        fragmentTransaction.replace(R.id.frame, lastFragment).replace(lastFragment.id, lastFragment)
         fragmentTransaction.commit()
     }
 

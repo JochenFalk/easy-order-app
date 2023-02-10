@@ -1,6 +1,7 @@
 package com.easysystems.easyorder.helpclasses
 
 import android.app.Application
+import android.content.res.Resources
 import android.graphics.drawable.Drawable
 import androidx.core.content.res.ResourcesCompat
 
@@ -19,5 +20,9 @@ class StringResourcesProvider(private val application: Application) {
     fun getDrawable(stringResId: Int) : Drawable? {
 
         return ResourcesCompat.getDrawable(application.resources, stringResId, null)
+    }
+
+    fun getResources(): Resources {
+        return application.resources
     }
 }

@@ -10,6 +10,8 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
+import androidx.fragment.app.commit
+import androidx.transition.TransitionInflater
 import com.easysystems.easyorder.MainActivity
 import com.easysystems.easyorder.R
 import com.easysystems.easyorder.adapters.OrderListAdapter
@@ -177,11 +179,18 @@ class OrderListFragment : Fragment() {
         sessionDTO?.updateSession {
 
             val fragmentManager: FragmentManager = parentFragmentManager
-            val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
             val paymentFragment = PaymentFragment()
 
-            fragmentTransaction.replace(R.id.frame, paymentFragment).addToBackStack(null)
-            fragmentTransaction.commit()
+            fragmentManager.commit {
+                setCustomAnimations(
+                    R.anim.slide_in,
+                    R.anim.fade_out,
+                    R.anim.slide_in,
+                    R.anim.fade_out
+                )
+                replace(R.id.frame, paymentFragment)
+                addToBackStack(null)
+            }
         }
     }
 
@@ -190,7 +199,7 @@ class OrderListFragment : Fragment() {
         val decimal: NumberFormat = DecimalFormat("0.00")
         val sessionDTO = MainActivity.sessionDTO
         val checkoutBtnText =
-            "${resources.getString(R.string.btnCheckout)} (Total: € ${decimal.format(sessionDTO?.total)})"
+            "${resources.getString(R.string.btn_checkout)} (Total: € ${decimal.format(sessionDTO?.total)})"
 
         binding.btnCheckout.text = checkoutBtnText
     }

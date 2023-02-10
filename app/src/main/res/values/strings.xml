@@ -1,15 +1,38 @@
 <resources>
     <string name="app_name">EasyOrder</string>
-    <string name="btnScan">Scan the code to join the table</string>
-    <string name="btnOrders">Manage your orders</string>
-    <string name="btnCheckout">Go to checkout</string>
-    <string name="btnCloseSession">Click here to pay</string>
-    <string name="titleText">Title</string>
-    <string name="totalText">Total</string>
-    <string name="statusText">Status</string>
     <string-array name="payment_methods">
         <item>Select payment option</item>
         <item>Ideal</item>
         <item>Credit card</item>
     </string-array>
+    <string-array name="valuta">
+        <item>€</item>
+        <item>$</item>
+    </string-array>
+    <string name="default_valuta">€</string>
+    <string name="cat_ipsum_dolor">"Cat ipsum dolor sit amet, thai. Malkin american bobtail. Kitten kitty scottish fold abyssinian egyptian mau. Havana brown american bobtail, manx bobcat yet egyptian mau. Grimalkin munchkin and puma. Ragdoll. Bobcat mouser so puma. Ocicat jaguar kitten russian blue, yet american shorthair.\n"</string>
+    <string name="btn_scan">Scan the code to join the table</string>
+    <string name="btn_orders">Manage your orders</string>
+    <string name="btn_checkout">Go to checkout</string>
+    <string name="btn_close_session">Click here to pay</string>
+    <string name="btn_clear_order">Clear order</string>
+    <string name="btn_send_order">Send order</string>
+    <string name="btn_edit_save">Save changes</string>
+    <string name="text_item_title">Title</string>
+    <string name="text_item_total">Total</string>
+    <string name="text_item_status">Status</string>
+    <string name="text_item_price">Price</string>
+    <string name="text_item_description">Description</string>
+    <string name="text_add_description">Enter description</string>
+    <string name="text_add_category">Enter category</string>
+    <string name="text_enter_name">Enter name</string>
+    <string name="text_enter_price">00.0</string>
+    <string name="picture_of_menu_item">Picture of menu item</string>
+    <string name="save_icon">Save icon</string>
+    <string name="menu_item_edit">Edit</string>
+    <string name="menu_item_done">itemDone</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="add_to_order">Add this to your order</string>
+    <string name="add_icon">Add icon</string>
+    <string name="text_zero">0</string>
 </resources>

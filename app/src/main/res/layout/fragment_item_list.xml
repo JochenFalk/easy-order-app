@@ -53,7 +53,7 @@
             android:paddingStart="60dp"
             android:paddingEnd="0dp"
             android:stateListAnimator="@null"
-            android:text="@string/btnOrders"
+            android:text="@string/btn_orders"
             android:textAllCaps="false"
             android:visibility="visible"
             app:cornerRadius="0dp"
@@ -87,7 +87,7 @@
             android:elevation="10dp"
             android:textColor="@color/white"
             android:visibility="visible"
-            android:text="0"
+            android:text="@string/text_zero"
             app:layout_constraintBottom_toBottomOf="@id/bottomGroup"
             app:layout_constraintStart_toStartOf="@+id/bottomGroup"
             tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />

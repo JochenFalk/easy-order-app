@@ -3,14 +3,13 @@ package com.easysystems.easyorder.fragments
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
+import androidx.fragment.app.commit
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -31,6 +30,13 @@ class ItemListFragment : Fragment() {
 
     private var isEmptyList: Boolean = false
 
+//    override fun onCreate(savedInstanceState: Bundle?) {
+//        super.onCreate(savedInstanceState)
+//        val inflater = TransitionInflater.from(requireContext())
+//        exitTransition = inflater.inflateTransition(R.transition.fade)
+//        enterTransition = inflater.inflateTransition(R.transition.slide)
+//    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -43,6 +49,8 @@ class ItemListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setHasOptionsMenu(true)
+
         requireActivity().onBackPressedDispatcher.addCallback(
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
@@ -52,6 +60,12 @@ class ItemListFragment : Fragment() {
             })
 
         viewModel = ViewModelProvider(requireActivity())[ItemListViewModel::class.java]
+
+        arguments?.getBoolean("isEditMode").let {
+            if (it != null) {
+                viewModel.isEditMode = it
+            }
+        }
 
         recyclerView = binding.recyclerView
         itemListAdapter = activity.let {
@@ -75,14 +89,42 @@ class ItemListFragment : Fragment() {
         setObservers()
     }
 
+    @Deprecated("Deprecated in Java")
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.item_list_menu, menu)
+        menu.findItem(R.id.itemEdit)?.isVisible = !viewModel.isEditMode
+        menu.findItem(R.id.itemDone)?.isVisible = viewModel.isEditMode
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+
+        when (item.itemId) {
+
+            R.id.itemEdit -> {
+                setEditMode(true)
+            }
+            R.id.itemDone -> {
+                setEditMode(false)
+            }
+        }
+        return true
+    }
+
     @SuppressLint("NotifyDataSetChanged")
     private fun setObservers() {
+
+        viewModel.itemObservable.observe(viewLifecycleOwner) { item ->
+            viewModel.updateItemList(item)
+            Log.i("Info", "Item observed: ${item.price}")
+        }
 
         viewModel.itemObservableList.observe(viewLifecycleOwner) { itemList ->
 
             if (itemList != null) {
                 itemListAdapter.itemList = itemList
                 itemListAdapter.notifyDataSetChanged()
+                Log.i("Info", "Item list observed: ${itemList[0].price}")
             }
         }
 
@@ -115,11 +157,39 @@ class ItemListFragment : Fragment() {
     private fun callOrderListFragment() {
 
         val fragmentManager: FragmentManager = parentFragmentManager
-        val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
         val orderListFragment = OrderListFragment()
 
-        fragmentTransaction.replace(R.id.frame, orderListFragment).addToBackStack(null)
-        fragmentTransaction.commit()
+        fragmentManager.commit {
+            setCustomAnimations(
+                R.anim.slide_in,
+                R.anim.fade_out,
+                R.anim.slide_in,
+                R.anim.fade_out
+            )
+            replace(R.id.frame, orderListFragment)
+            addToBackStack(null)
+        }
+    }
+
+    private fun setEditMode(boolean: Boolean) {
+
+        val fragmentManager: FragmentManager = parentFragmentManager
+        val itemListFragment = ItemListFragment()
+        val bundle = Bundle()
+
+        bundle.putBoolean("isEditMode", boolean)
+        itemListFragment.arguments = bundle
+
+        fragmentManager.commit {
+            setCustomAnimations(
+                R.anim.fade_in,
+                R.anim.fade_out,
+                R.anim.slide_in,
+                R.anim.slide_out
+            )
+            replace(R.id.frame, itemListFragment)
+            replace(this@ItemListFragment.id, itemListFragment)
+        }
     }
 
     private fun updateBottomNavigation() {
@@ -127,7 +197,7 @@ class ItemListFragment : Fragment() {
         val decimal: NumberFormat = DecimalFormat("0.00")
         val sessionDTO = MainActivity.sessionDTO
         val orderBtnText =
-            "${resources.getString(R.string.btnOrders)} (Total: € ${decimal.format(sessionDTO?.total)})"
+            "${resources.getString(R.string.btn_orders)} (Total: € ${decimal.format(sessionDTO?.total)})"
         val order = sessionDTO?.orders?.last()
         val count = order?.items?.size
 

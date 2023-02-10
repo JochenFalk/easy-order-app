@@ -1,23 +1,14 @@
 package com.easysystems.easyorder.data
 
 import android.graphics.drawable.Drawable
-import com.easysystems.easyorder.R
-import com.easysystems.easyorder.helpclasses.StringResourcesProvider
-import org.koin.java.KoinJavaComponent
+import java.io.FileDescriptor
+import java.io.Serializable
 
 data class ItemObservable(
     var id: Int? = null,
-    var name: String? = null,
     var image: Drawable? = null,
+    var name: String? = null,
+    var price: String? = null,
     var category: String? = null,
-    var price: String? = null
-) {
-
-    private val stringResourcesProvider: StringResourcesProvider by KoinJavaComponent.inject(
-        StringResourcesProvider::class.java
-    )
-
-    init {
-        image = stringResourcesProvider.getDrawable(R.drawable.ic_launcher_foreground)
-    }
-}
+    var description: String? = null
+) : Serializable

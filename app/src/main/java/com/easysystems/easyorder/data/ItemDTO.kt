@@ -11,7 +11,9 @@ data class ItemDTO(
     @JsonProperty("category")
     val category: Category? = null,
     @JsonProperty("price")
-    val price: Double? = null
+    val price: Double? = null,
+    @JsonProperty("description")
+    val description: String? = null
 ) : Serializable {
     enum class Category {
         APPETIZER,

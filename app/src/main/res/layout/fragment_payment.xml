@@ -22,7 +22,7 @@
             android:id="@+id/expandableListView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/layout_border_transparent"
+            android:background="@drawable/rounded_border_transparent_background"
             android:divider="@android:color/darker_gray"
             android:dividerHeight="0.5dp"
             android:indicatorLeft="?android:attr/expandableListPreferredItemIndicatorLeft"
@@ -49,7 +49,7 @@
             android:layout_marginStart="10dp"
             android:layout_marginEnd="10dp"
             android:layout_marginBottom="10dp"
-            android:background="@drawable/layout_border_transparent" />
+            android:background="@drawable/rounded_border_transparent_background" />
 
     </LinearLayout>
 
@@ -71,7 +71,7 @@
             android:paddingStart="60dp"
             android:paddingEnd="0dp"
             android:stateListAnimator="@null"
-            android:text="@string/btnCheckout"
+            android:text="@string/btn_checkout"
             android:textAllCaps="false"
             android:visibility="visible"
             app:cornerRadius="0dp"

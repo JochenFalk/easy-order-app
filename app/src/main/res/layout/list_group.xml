@@ -43,7 +43,7 @@
             android:layout_height="wrap_content"
             android:gravity="start"
             android:padding="10dp"
-            android:text="@string/statusText"
+            android:text="@string/text_item_status"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="@+id/titleText"
             app:layout_constraintTop_toBottomOf="@+id/titleText" />
